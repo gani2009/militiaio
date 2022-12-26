@@ -120,7 +120,7 @@ wss.on('connection', function connection(ws) {
   });
 });
 
-//secret page
+//Secret page
 app.get("/beta", function(req, res) {
   res.render("beta");
 });
@@ -128,4 +128,4 @@ app.post("/beta", function(req, res) {
   res.render("betaGame", { name: req.body.name, country: req.body.countr.toLowerCase() });
 });
 //Start Server
-server.listen(port);
+server.listen(process.env.PORT);
