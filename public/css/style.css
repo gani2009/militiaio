@@ -1,0 +1,89 @@
+html, body{
+  width:100%;
+  height:100%;
+  overflow: auto;
+}
+
+.home{
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-image:url('/background.png');
+}
+
+select{
+  margin-left: 10%;
+  max-width:80%;
+  margin-bottom: 10px;
+}
+
+.login-window{
+  width: 27%;
+  min-height: 50%;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 10px;
+  float: left;
+  margin-left: 4.75%;
+  margin-top: 7%;
+}
+
+.first-window{
+  width: 27%;
+  min-height: 50%;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 10px;
+  float: left;
+  margin-left: 4.75%;
+  margin-top: 7%;
+}
+
+.main-window{
+  width: 27%;
+  height: 50%;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 10px;
+  float: left;
+  margin-left: 4.75%;
+  margin-top: 7%;
+}
+
+.register-window{
+  width: 30%;
+  height: 50%;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 10px;
+  margin-left: 35%;
+  margin-top: 10%;
+}
+
+.title{
+  max-width:100%
+  margin: 25px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.name{
+  max-width:80%;
+  margin: auto;
+  margin-bottom: 5px;
+}
+
+.button{
+  margin-left: 10%;
+}
+
+#player{
+  margin:0;
+}
+
+.message{
+  font-size: 14px;
+  max-width: 80%;
+  margin-bottom: 5px;
+  margin-left: 10%;
+}
