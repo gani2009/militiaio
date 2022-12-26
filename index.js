@@ -120,6 +120,14 @@ wss.on('connection', function connection(ws) {
   });
 });
 
+function noop() {};
+
+const ping = function() {
+  wss.ping(noop);
+};
+
+setInterval(ping, 30000);
+
 //Secret page
 app.get("/beta", function(req, res) {
   res.render("beta");
