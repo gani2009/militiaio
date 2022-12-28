@@ -12,13 +12,19 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
+const WebSocket = require('ws');
+const https = require('https');
+const fs = require('fs');
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
 const app = express();
-const server = require('http').Server(app);
-const WebSocket = require("ws");
-const wss = new WebSocket.Server({ server });
+const server = https.createServer({
+  key: fs.readFileSync('server.key'),
+  cert: fs.readFileSync('server.cert')
+},app)
+
+const wss = new WebSocket.Server({ server })
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -27,7 +33,6 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
-var port = 1100;
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -128,4 +133,6 @@ app.post("/beta", function(req, res) {
   res.render("betaGame", { name: req.body.name, country: req.body.countr.toLowerCase() });
 });
 //Start Server
-server.listen(process.env.PORT);
+server.listen(process.env.PORT, () => {
+  console.log("Server listening on port " + process.env.PORT);
+});
