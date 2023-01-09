@@ -13,18 +13,14 @@ const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
 const WebSocket = require('ws');
-const https = require('https');
+const https = require('http');
 const fs = require('fs');
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
 const app = express();
-const server = https.createServer({
-  key: fs.readFileSync('server.key'),
-  cert: fs.readFileSync('server.cert')
-},app)
 
-const wss = new WebSocket.Server({ server })
+const wss = new WebSocket.Server({ port: process.env.PORT });
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
