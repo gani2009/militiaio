@@ -105,13 +105,21 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
-  res.render("game", { name: userId, country: req.body.countr.toLowerCase() });
+  let country = req.body.countr.toLowerCase();
+  if (country === 'none') {
+    country = 'af';
+  };
+  res.render("game", { name: userId, country: country });
 });
 
 app.ws('/chat', function(ws, req) {
   ws.on('message', function(msg) {
     console.log(msg);
   });
+});
+
+app.ws('/game', function(ws, req) {
+  console.log("Game server has turned on.")
 });
 
 //Secret page

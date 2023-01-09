@@ -14,7 +14,7 @@
       <h5 class="name">Name: </h5>
       <input class="name form-control" placeholder="Name" name="name" type="text" value="<%=user.username%>"/>
         <select id="country" class="form-select" name="countr">
-    <option>Select country</option>
+    <option value="none">Select country</option>
     <option value="AF">Afghanistan</option>
     <option value="AX">Aland Islands</option>
     <option value="AL">Albania</option>
@@ -280,7 +280,7 @@
     </div>
   </div>
   <script>
-      const socket = new WebSocket('ws:/militiaio.onrender.com');
+      const socket = new WebSocket('wss://militiaio.onrender.com/chat');
     socket.addEventListener('open', event => {
       document.getElementById("mes").disabled = false;
       document.getElementById("mes").placeholder = "Chat";
@@ -288,12 +288,14 @@
     });
 
 socket.addEventListener('message', event => {
+  if (event.data !== ''){
   const messageDiv = document.createElement("p");
   messageDiv.innerText = event.data;
   messageDiv.className = "message";
   document.getElementById('chat').insertBefore(messageDiv, document.getElementById('blah'));
   if (document.getElementsByClassName('message').length >= 11){
   document.getElementsByClassName('message')[0].remove();
+  };
   };
 });
 document.addEventListener('keypress', event => {
@@ -303,10 +305,14 @@ document.addEventListener('keypress', event => {
 });
 socket.addEventListener('close', event => {
   console.log('WebSocket connection closed');
+  document.getElementById("mes").placeholder = "Connection closed";
+  document.getElementById("mes").disabled = true;
 });
 
 socket.addEventListener('error', error => {
   console.error(error);
+  document.getElementById("mes").placeholder = "Error";
+  document.getElementById("mes").disabled = true;
 });
     function sendms(){
     if (document.getElementById('mes').value !== ""){

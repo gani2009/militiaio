@@ -3,6 +3,8 @@
       <canvas id="canvas" class="game-window"></canvas>
   </div>
   <script type="text/javascript">
-
+    var canvas = document.getElementById('canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   </script>
   <%- include('footer') -%>

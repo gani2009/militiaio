@@ -3,5 +3,32 @@
       <canvas id="canvas" class="game-window"></canvas>
   </div>
   <script type="text/javascript">
+
+var canvas = document.getElementById('canvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+var ctx = canvas.getContext('2d');
+ctx.font = "18px Arial";
+class Player{
+  constructor(name, country){
+    this.name = name;
+    this.flag = 'https://flagcdn.com/w20/'+country+'.png';
+    this.x = 150;
+    this.y = 50;
+  };
+  show(){
+    const flag = new Image();
+    flag.onload = () => {
+    ctx.drawImage(flag, this.x-22, this.y-12);
+    };
+    flag.src = this.flag;
+    ctx.fillText(this.name, this.x, this.y);
+  };
+  update(){
+    
+  }
+};
+var thisPlayer = new Player('<%=name%>', '<%=country%>')
+thisPlayer.show()
     </script>
   <%- include('footer') -%>
