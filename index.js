@@ -114,7 +114,7 @@ app.post("/game", function(req, res) {
 
 app.ws('/chat', function(ws, req) {
   ws.on('message', function(msg) {
-    console.log(msg);
+    ws.send(msg);
   });
 });
 
