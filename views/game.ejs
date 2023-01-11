@@ -1,34 +1,81 @@
 <%- include('header') -%>
-  <div class="home" id="home">
-      <canvas id="canvas" class="game-window"></canvas>
+  <div class="game-home" style="backgound-color: white;">
+      <canvas id="canvas" class="game-window"></canvas
   </div>
-  <script type="text/javascript">
 
+  
+  <script type="text/javascript">
+const game = new WebSocket('wss://militiaio.onrender.com/game');
 var canvas = document.getElementById('canvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 ctx.font = "18px Arial";
+
+
 class Player{
-  constructor(name, country){
+  constructor (name){
     this.name = name;
-    this.flag = 'https://flagcdn.com/w20/'+country+'.png';
+    this.color = "<%=color%>";
     this.x = 150;
     this.y = 50;
+    this.Xvel = 0;
+    this.Yvel = 0;
+    this.offset = ctx.measureText(name);
   };
-  show(){
-    const flag = new Image();
-    flag.onload = () => {
-    ctx.drawImage(flag, this.x-22, this.y-12);
-    };
-    flag.src = this.flag;
+  show (){
     ctx.fillText(this.name, this.x, this.y);
+    this.updateOnline();
   };
-  update(){
-    
-  }
+  update (){
+    this.x = this.Xvel + this.x;
+    this.y = this.Yvel + this.y;
+    this.show();
+  };
+  updateOnline (){
+game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
+  };
 };
-var thisPlayer = new Player('<%=name%>', '<%=country%>')
-thisPlayer.show()
+
+
+var player = new Player("<%=name%>");
+game.addEventListener("open", e => {
+  player.show();
+  loop();
+});
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  player.update();
+  requestAnimationFrame(loop)
+};
+
+document.addEventListener("keydown", event => {
+  if (event.code === "KeyW" || event.code === "ArrowUp"){
+    player.Yvel = -1;
+  };
+  if (event.code === "KeyS" || event.code === "ArrowDown"){
+    player.Yvel = 1;
+  };
+  if (event.code === "KeyA" || event.code === "ArrowLeft"){
+    player.Xvel = -1;
+  };
+  if (event.code === "KeyD" || event.code === "ArrowRight"){
+    player.Xvel = 1;
+  };
+});
+document.addEventListener("keyup", event => {
+  if (event.code === "KeyW" || event.code === "ArrowUp"){
+    player.Yvel = 0;
+  };
+  if (event.code === "KeyS" || event.code === "ArrowDown"){
+    player.Yvel = 0;
+  };
+  if (event.code === "KeyA" || event.code === "ArrowLeft"){
+    player.Xvel = 0;
+  };
+  if (event.code === "KeyD" || event.code === "ArrowRight"){
+    player.Xvel = 0;
+  };
+});
     </script>
   <%- include('footer') -%>

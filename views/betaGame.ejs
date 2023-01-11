@@ -3,6 +3,7 @@
       <canvas id="canvas" class="game-window"></canvas>
   </div>
   <script type="text/javascript">
+    const game = new WebSocket('wss://militiaio.onrender.com/game');
     var canvas = document.getElementById('canvas');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;

@@ -12,7 +12,7 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
-const WebSocket = require('ws');
+const randomColor = require('randomcolor');
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
@@ -105,11 +105,8 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
-  let country = req.body.countr.toLowerCase();
-  if (country === 'none') {
-    country = 'af';
-  };
-  res.render("game", { name: userId, country: country });
+  let color = randomColor();
+  res.render("game", { name: userId, color: color });
 });
 
 app.ws('/chat', function(ws, req) {
@@ -119,7 +116,9 @@ app.ws('/chat', function(ws, req) {
 });
 
 app.ws('/game', function(ws, req) {
-  console.log("Game server has turned on.")
+  ws.on('message', function(msg) {
+    ws.send(msg);
+  });
 });
 
 //Secret page
