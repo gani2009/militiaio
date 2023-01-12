@@ -10,22 +10,43 @@ var canvas = document.getElementById('canvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
-ctx.font = "18px Arial";
+ctx.font = "15px Arial";
+
+
+function drawGrid(size) {
+  let s = size;
+  let x = 0;
+  let y = 0;
+  let gridBoxes = [];
+  while (x+s<canvas.width && y+s<canvas.height){
+  while (x+s<canvas.width){
+    ctx.strokeRect(x, y, s, s);
+    x = x + s;
+  };
+  y = y + s;
+  };
+};
 
 
 class Player{
   constructor (name){
     this.name = name;
     this.color = "<%=color%>";
-    this.x = 150;
-    this.y = 50;
+    this.radius = 15;
+    this.x = canvas.width/2;
+    this.y = canvas.height/2;
     this.Xvel = 0;
     this.Yvel = 0;
     this.offset = ctx.measureText(name);
+    this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
   };
   show (){
+    ctx.beginPath();
+    ctx.arc(this.x+this.offset.width/2, this.y-this.offsetHeight-this.radius, this.radius, 0, 2 * Math.PI);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.fillStyle = "black";
     ctx.fillText(this.name, this.x, this.y);
-    this.updateOnline();
   };
   update (){
     this.x = this.Xvel + this.x;
@@ -41,26 +62,29 @@ game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
 var player = new Player("<%=name%>");
 game.addEventListener("open", e => {
   player.show();
+  drawGrid(30);
   loop();
 });
 function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   player.update();
-  requestAnimationFrame(loop)
+  requestAnimationFrame(loop);
 };
+
+var velChange = 1;
 
 document.addEventListener("keydown", event => {
   if (event.code === "KeyW" || event.code === "ArrowUp"){
-    player.Yvel = -1;
+    player.Yvel = -velChange;
   };
   if (event.code === "KeyS" || event.code === "ArrowDown"){
-    player.Yvel = 1;
+    player.Yvel = velChange;
   };
   if (event.code === "KeyA" || event.code === "ArrowLeft"){
-    player.Xvel = -1;
+    player.Xvel = -velChange;
   };
   if (event.code === "KeyD" || event.code === "ArrowRight"){
-    player.Xvel = 1;
+    player.Xvel = velChange;
   };
 });
 document.addEventListener("keyup", event => {
@@ -79,3 +103,4 @@ document.addEventListener("keyup", event => {
 });
     </script>
   <%- include('footer') -%>
+
