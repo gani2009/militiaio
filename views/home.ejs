@@ -34,7 +34,7 @@
   <script>
     const chatNameExtension = new Date();
     document.cookie = chatNameExtension.getMilliseconds();
-    const socket = new WebSocket('ws://localhost:8080/chat');
+    const socket = new WebSocket('wss://militiaio.onrender.com/');
   socket.addEventListener('open', event => {
     document.getElementById("mes").disabled = false;
     document.getElementById("mes").placeholder = "Chat";
