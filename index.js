@@ -12,12 +12,15 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
-const randomColor = require('randomcolor');
+const WebSocket = require('ws');
+const https = require('http');
+const fs = require('fs');
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
 const app = express();
-var expressWs = require('express-ws')(app);
+
+const wss = new WebSocket.Server({ port: process.env.PORT });
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -46,7 +49,7 @@ passport.deserializeUser(Player.deserializeUser());
 // Home page
 app.get("/", function(req, res) {
   if (req.isAuthenticated()) {
-    res.render('loggedhome', { user: req.user });
+    res.render('loggedhome', { user: req.user});
   } else {
     res.render("home");
   }
@@ -95,7 +98,7 @@ app.get("/logout", function(req, res) {
     }
   })
 });
-app.get("/game", function(req, res) {
+app.get("/game", function(req, res){
   res.redirect("/");
 });
 app.post("/game", function(req, res) {
@@ -105,19 +108,16 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
-  let color = randomColor();
-  res.render("game", { name: userId, color: color });
+  res.render("game", { name: userId, country: req.body.countr.toLowerCase()});
 });
 
-app.ws('/chat', function(ws, req) {
-  ws.on('message', function(msg) {
-    ws.send(msg);
-  });
-});
-
-app.ws('/game', function(ws, req) {
-  ws.on('message', function(msg) {
-    ws.send(msg);
+wss.on('connection', function connection(ws) {
+  ws.on('message', function incoming(data) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data.toString());
+      }
+    });
   });
 });
 
@@ -129,6 +129,6 @@ app.post("/beta", function(req, res) {
   res.render("betaGame", { name: req.body.name, country: req.body.countr.toLowerCase() });
 });
 //Start Server
-app.listen(process.env.PORT, () => {
+server.listen(process.env.PORT, () => {
   console.log("Server listening on port " + process.env.PORT);
 });
