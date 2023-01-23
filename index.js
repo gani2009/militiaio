@@ -19,7 +19,7 @@ mongoose.set('strictQuery', true);
 
 const app = express();
 
-const wss = new WebSocket.Server({ port: 8000 });
+const wss = new WebSocket.Server({ port: 8080 });
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
