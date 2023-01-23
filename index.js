@@ -14,7 +14,6 @@ const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
 const WebSocket = require('ws');
 const https = require('http');
-const fs = require('fs');
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
