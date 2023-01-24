@@ -12,13 +12,11 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
-const WebSocket = require('ws');
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
 const app = express();
-
-const wss = new WebSocket.Server({ port: 3000 });
+var expressWs = require('express-ws')(app);
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -46,6 +44,7 @@ passport.deserializeUser(Player.deserializeUser());
 
 // Home page
 app.get("/", function(req, res) {
+
   if (req.isAuthenticated()) {
     res.render('loggedhome', { user: req.user });
   } else {
@@ -109,12 +108,22 @@ app.post("/game", function(req, res) {
   res.render("game", { name: userId, country: req.body.countr.toLowerCase() });
 });
 
-wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(data) {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data.toString());
-      }
+app.ws('/chat', function(ws, req) {
+  ws.on('message', function (msg) {
+    expressWs.getWss().clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(msg);
+        }
+    });
+  });
+});
+
+app.ws('/game', function(ws, req) {
+  ws.on('message', function (msg) {
+    expressWs.getWss().clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(msg);
+        }
     });
   });
 });

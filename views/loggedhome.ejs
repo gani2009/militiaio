@@ -25,7 +25,7 @@
     </div>
   </div>
   <script>
-      const socket = new WebSocket('wss://militiaio.onrender.com/');
+      const socket = new WebSocket('wss://militiaio.onrender.com/chat');
     socket.addEventListener('open', event => {
       document.getElementById("mes").disabled = false;
       document.getElementById("mes").placeholder = "Chat";
