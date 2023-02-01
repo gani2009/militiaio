@@ -13,7 +13,6 @@ const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
 var randomColor = require('randomcolor');
-var color = randomColor();
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
