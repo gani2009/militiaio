@@ -23,7 +23,7 @@
     <h1 class="title">Login/Register</h1>
       <form class="form-group" action="/login" method="post">
       <h5 class="name">Username: </h5>
-      <input class="name form-control" placeholder="Username" name="username" type="text"/>
+      <input class="name form-control" placeholder="Username" name="username" type="text" max="15"/>
       <h5 class="name">Password: </h5>
         <input class="name form-control" placeholder="Password" name="password" type="password"/>
         <button type="submit" class="btn btn-outline-secondary button" style="display: inline; float: left;">Login</button>
@@ -34,7 +34,7 @@
   <script>
     const chatNameExtension = new Date();
     document.cookie = chatNameExtension.getMilliseconds();
-    const socket = new WebSocket('wss://militiaio.onrender.com/chat');
+    const socket = new WebSocket('wss://militiaio.ganiomyrzak.repl.co/chat');
   socket.addEventListener('open', event => {
     document.getElementById("mes").disabled = false;
     document.getElementById("mes").placeholder = "Chat";

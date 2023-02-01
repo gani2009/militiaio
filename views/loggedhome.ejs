@@ -20,12 +20,12 @@
       </div>
     </div>
     <div class="login-window">
-      <h1 class="title"><%= user.username %></h1>
+      <h1 class="title" style="overflow: auto"><%= user.username %></h1>
       <button type="button" class="btn btn-link" style="display: inline; float: right; margin-right: 10%;" onclick="location.href='/logout'">Logout</button>
     </div>
   </div>
   <script>
-      const socket = new WebSocket('wss://militiaio.onrender.com/chat');
+      const socket = new WebSocket('wss://militiaio.ganiomyrzak.repl.co/chat');
     socket.addEventListener('open', event => {
       document.getElementById("mes").disabled = false;
       document.getElementById("mes").placeholder = "Chat";

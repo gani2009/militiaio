@@ -5,7 +5,7 @@
 
   
   <script type="text/javascript">
-const game = new WebSocket('wss://militiaio.onrender.com/game');
+const game = new WebSocket('wss://militiaio.ganiomyrzak.repl.co/game');
 var canvas = document.getElementById('canvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -14,17 +14,7 @@ ctx.font = "15px Arial";
 
 
 function drawGrid(size) {
-  let s = size;
-  let x = 0;
-  let y = 0;
-  let gridBoxes = [];
-  while (x+s<canvas.width && y+s<canvas.height){
-  while (x+s<canvas.width){
-    ctx.strokeRect(x, y, s, s);
-    x = x + s;
-  };
-  y = y + s;
-  };
+  
 };
 
 

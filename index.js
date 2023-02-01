@@ -12,6 +12,8 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
+var randomColor = require('randomcolor');
+var color = randomColor();
 mongoose.connect(process.env.MONGODB);
 mongoose.set('strictQuery', true);
 
@@ -105,36 +107,26 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
-  res.render("game", { name: userId, country: req.body.countr.toLowerCase() });
+  var color = randomColor();
+  res.render("game", { name: userId, color: color });
 });
 
 app.ws('/chat', function(ws, req) {
-  ws.on('message', function (msg) {
+  ws.on('message', function(msg) {
     expressWs.getWss().clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(msg);
-        }
+      client.send(msg);
     });
   });
 });
 
 app.ws('/game', function(ws, req) {
-  ws.on('message', function (msg) {
+  ws.on('message', function(msg) {
     expressWs.getWss().clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(msg);
-        }
+      client.send(msg);
     });
   });
 });
 
-//Secret page
-app.get("/beta", function(req, res) {
-  res.render("beta");
-});
-app.post("/beta", function(req, res) {
-  res.render("betaGame", { name: req.body.name, country: req.body.countr.toLowerCase() });
-});
 //Start Server
 app.listen(process.env.PORT, () => {
   console.log("Server listening on port " + process.env.PORT);
