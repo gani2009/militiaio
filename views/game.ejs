@@ -11,20 +11,44 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 ctx.font = "15px Arial";
+var size = 10;
 
 
-function drawGrid(size) {
-  
+rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
+    if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
+        return false;
+    }
+    return true;
+};
+
+
+function drawMap() {
+  let maxColumnX = canvas.width/size;
+  let maxColumnY = canvas.height/size;
+  ctx.strokeStyle = "#bdbdbd";
+  for (let y = 0; y < maxColumnY; y++) {
+    for (let x = 0; x < maxColumnX; x++) {
+      ctx.strokeRect(x*size, y*size, size, size);
+    };
+  };
+};
+
+
+function drawCountryBorder(x, y, width=size, height=size, borderSize=size) {
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = '<%=color%>';
+  ctx.fillRect(x*borderSize, y*borderSize, width, height);
+  ctx.globalAlpha = 1;
 };
 
 
 class Player{
-  constructor (name){
+  constructor (name, color, x, y){
     this.name = name;
-    this.color = "<%=color%>";
+    this.color = color;
     this.radius = 15;
-    this.x = canvas.width/2;
-    this.y = canvas.height/2;
+    this.x = x;
+    this.y = y;
     this.Xvel = 0;
     this.Yvel = 0;
     this.offset = ctx.measureText(name);
@@ -36,9 +60,12 @@ class Player{
     ctx.fillStyle = this.color;
     ctx.fill();
     ctx.fillStyle = "black";
+    ctx.font = this.radius + "px Arial";
     ctx.fillText(this.name, this.x, this.y);
   };
   update (){
+    this.offset = ctx.measureText(this.name);
+    this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.x = this.Xvel + this.x;
     this.y = this.Yvel + this.y;
     this.show();
@@ -46,22 +73,36 @@ class Player{
   updateOnline (){
 game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
   };
+  clear (){
+    ctx.clearRect(this.x-this.offset.width/2, this.y-this.offsetHeight-this.radius*2-1, this.radius*2+2, this.radius*2+this.offsetHeight+3);
+  };
+};
+
+class City{
+  constructer (name, x, y){
+    
+  };
+  
 };
 
 
-var player = new Player("<%=name%>");
+var player = new Player("<%=name%>", "<%=color%>");
+let esc;
 game.addEventListener("open", e => {
   player.show();
-  drawGrid(30);
+  drawMap();
   loop();
 });
 function loop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  player.clear();
+  drawMap();
   player.update();
-  requestAnimationFrame(loop);
+  if (esc !== "Escape"){
+    requestAnimationFrame(loop);
+  };
 };
 
-var velChange = 1;
+var velChange = 2;
 
 document.addEventListener("keydown", event => {
   if (event.code === "KeyW" || event.code === "ArrowUp"){
@@ -78,6 +119,7 @@ document.addEventListener("keydown", event => {
   };
 });
 document.addEventListener("keyup", event => {
+  esc = event.code;
   if (event.code === "KeyW" || event.code === "ArrowUp"){
     player.Yvel = 0;
   };

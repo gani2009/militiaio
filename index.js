@@ -106,7 +106,7 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
-  var color = randomColor();
+  let color = randomColor();
   res.render("game", { name: userId, color: color });
 });
 
