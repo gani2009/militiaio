@@ -14,7 +14,7 @@ ctx.font = "15px Arial";
 var size = 10;
 
 
-rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
+function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
     if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
         return false;
     }
@@ -53,15 +53,16 @@ class Player{
     this.Yvel = 0;
     this.offset = ctx.measureText(name);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
+    this.rectAround = {x: this.x-this.offset.width-1, y: this.y-this.radius-1, width: this.offset.width*2+2, height: this.radius*2+this.offsetHeight+5};
   };
   show (){
     ctx.beginPath();
-    ctx.arc(this.x+this.offset.width/2, this.y-this.offsetHeight-this.radius, this.radius, 0, 2 * Math.PI);
+    ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
     ctx.fillStyle = this.color;
     ctx.fill();
     ctx.fillStyle = "black";
     ctx.font = this.radius + "px Arial";
-    ctx.fillText(this.name, this.x, this.y);
+    ctx.fillText(this.name, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
   };
   update (){
     this.offset = ctx.measureText(this.name);
@@ -74,29 +75,38 @@ class Player{
 game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
   };
   clear (){
-    ctx.clearRect(this.x-this.offset.width/2, this.y-this.offsetHeight-this.radius*2-1, this.radius*2+2, this.radius*2+this.offsetHeight+3);
+    this.rectAround = {x: this.x-this.offset.width-1, y: this.y-this.radius-1, width: this.offset.width*2+2, height: this.radius*2+this.offsetHeight+5};
+    ctx.clearRect(this.rectAround.x, this.rectAround.y, this.rectAround.width, this.rectAround.height);
   };
 };
 
 class City{
   constructer (name, x, y){
-    
+    this.name = name;
+    this.x = x;
+    this.y = y;
   };
   
 };
 
 
-var player = new Player("<%=name%>", "<%=color%>");
+var players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2)];
 let esc;
 game.addEventListener("open", e => {
-  player.show();
+  for (player in players){
+    players[player].show();
+  };
   drawMap();
   loop();
 });
 function loop() {
-  player.clear();
+  for (player in players){
+    players[player].clear();
+  };
   drawMap();
-  player.update();
+  for (player in players){
+    players[player].update();
+  };
   if (esc !== "Escape"){
     requestAnimationFrame(loop);
   };
@@ -106,31 +116,31 @@ var velChange = 2;
 
 document.addEventListener("keydown", event => {
   if (event.code === "KeyW" || event.code === "ArrowUp"){
-    player.Yvel = -velChange;
+    players[0].Yvel = -velChange;
   };
   if (event.code === "KeyS" || event.code === "ArrowDown"){
-    player.Yvel = velChange;
+    players[0].Yvel = velChange;
   };
   if (event.code === "KeyA" || event.code === "ArrowLeft"){
-    player.Xvel = -velChange;
+    players[0].Xvel = -velChange;
   };
   if (event.code === "KeyD" || event.code === "ArrowRight"){
-    player.Xvel = velChange;
+    players[0].Xvel = velChange;
   };
 });
 document.addEventListener("keyup", event => {
   esc = event.code;
   if (event.code === "KeyW" || event.code === "ArrowUp"){
-    player.Yvel = 0;
+    players[0].Yvel = 0;
   };
   if (event.code === "KeyS" || event.code === "ArrowDown"){
-    player.Yvel = 0;
+    players[0].Yvel = 0;
   };
   if (event.code === "KeyA" || event.code === "ArrowLeft"){
-    player.Xvel = 0;
+    players[0].Xvel = 0;
   };
   if (event.code === "KeyD" || event.code === "ArrowRight"){
-    player.Xvel = 0;
+    players[0].Xvel = 0;
   };
 });
     </script>
