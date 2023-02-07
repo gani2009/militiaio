@@ -115,6 +115,7 @@ app.ws('/chat', function(ws, req) {
     expressWs.getWss().clients.forEach(client => {
       client.send(msg);
     });
+    console.log(msg);
   });
 });
 

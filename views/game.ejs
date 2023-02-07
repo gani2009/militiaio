@@ -15,11 +15,20 @@ var size = 10;
 let img = new Image();
 img.src = "/village.png";
 
+
+function drawCountryBorder(x, y, color, width=size, height=size, borderSize=size) {
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = color;
+  ctx.fillRect(x*borderSize, y*borderSize, width, height);
+  ctx.globalAlpha = 1;
+};
+
 function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
     if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
         return false;
-    }
-    return true;
+    } else {
+      return true;
+    };
 };
 
 function drawMap() {
@@ -33,15 +42,18 @@ function drawMap() {
   };
 };
 
-function drawCountryBorder(x, y, width=size, height=size, color, borderSize=size) {
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = color;
-  ctx.fillRect(x*borderSize, y*borderSize, width, height);
-  ctx.globalAlpha = 1;
+function battleSimulate(army1, army2) {
+  let soldiers = army1.soldiers - army2.soldiers;
+  let cavalry = army1.cavalry - army2.cavalry;
+  
 };
+
 
 class Player{
   constructor (name, color, x, y){
+    if (name.length >= 10){
+      name = name.slice(0, 11)+"...";
+    };
     this.name = name;
     this.color = color;
     this.radius = size*1.5;
@@ -49,10 +61,11 @@ class Player{
     this.y = y;
     this.Xvel = 0;
     this.Yvel = 0;
-    this.army = {soldiers: 0, cavalry: 0, archers: 0};
-    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
+    this.army = {soldiers: 0, cavalry: 0, archers: 0, order:"sac"};
+    this.cities = [];
+    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry/2+this.army.archers/1.5));
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.rectAround = {x: this.x-this.offset.width-1, y: this.y-this.radius-1, width: this.offset.width*2+2, height: this.radius*2+this.offsetHeight+5};
+    this.rectAround = {x: this.x-this.offset.width/2-1, y: this.y-this.radius-1, width: this.offset.width/2+2, height: this.radius*2+this.offsetHeight+2};
   };
   show (){
     ctx.beginPath();
@@ -76,31 +89,32 @@ class Player{
     game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
   };
   clear (){
-    this.rectAround = {x: this.x-this.offset.width-1, y: this.y-this.radius-1, width: this.offset.width*2+2, height: this.radius*2+this.offsetHeight+5};
+    this.rectAround = {x: this.x-this.offset.width/2-1, y: this.y-this.radius-1, width: this.offset.width+2, height: this.radius*2+this.offsetHeight+2};
     ctx.clearRect(this.rectAround.x, this.rectAround.y, this.rectAround.width, this.rectAround.height);
   };
 };
 
 class City{
-  constructor (name, x, y){
+  constructor (name, x, y){ 
     this.name = name;
     this.x = x;
     this.y = y;
     this.country = 'neutral';
     this.size = size*3;
-    this.army = {soldiers: 0, cavalry: 0, archers: 0};
-    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
+    this.army = {soldiers: 0, cavalry: 0, archers: 0, order:"asc"};
+    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry/2+this.army.archers/1.5));
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.rectAround = {x: this.x - this.offset.width/2 - 2, y: this.y - 2, width: this.size + this.offset.width/2 + 4, height: this.size + this.offsetHeight + 4};
+    this.rectAround = {x: this.x - this.offset.width/2 - 2, y: this.y - 2, width: this.size + this.offset.width + 4, height: this.size + this.offsetHeight + 4};
   };
   show (){
     this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     ctx.drawImage(img, this.x, this.y, this.size, this.size);
+    ctx.fillStyle = "black";
     ctx.fillText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers), this.x-this.offset.width/2+this.size/2, this.y+this.size+this.offsetHeight);
   };
   clear (){
-    ctx.clearRect(this.x - this.offset.width/2 - 2, this.y - 2, this.size + this.offset.width/2 + 4, this.size + this.offsetHeight + 4);
+    ctx.clearRect(this.rectAround.x, this.rectAround.y, this.rectAround.width, this.rectAround.height);
   };
 };
 
@@ -137,6 +151,11 @@ function loop() {
   };
   for (city in cities){
     cities[city].show();
+    let collison = rectCollisionDetect(cities[city].rectAround.x, cities[city].rectAround.y, cities[city].rectAround.width, cities[city].rectAround.height, players[0].rectAround.x, players[0].rectAround.y, players[0].rectAround.width, players[0].rectAround.height);
+    if (collison){
+      let battle = battleSimulate(cities[city].army, player[0].army);
+      
+    };
   };
   if (esc !== "Escape"){
     requestAnimationFrame(loop);
