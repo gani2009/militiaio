@@ -12,7 +12,8 @@ canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 ctx.font = "15px Arial";
 var size = 10;
-
+let img = new Image();
+img.src = "/village.png";
 
 function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
     if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
@@ -20,7 +21,6 @@ function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
     }
     return true;
 };
-
 
 function drawMap() {
   let maxColumnX = canvas.width/size;
@@ -33,25 +33,24 @@ function drawMap() {
   };
 };
 
-
-function drawCountryBorder(x, y, width=size, height=size, borderSize=size) {
+function drawCountryBorder(x, y, width=size, height=size, color, borderSize=size) {
   ctx.globalAlpha = 0.3;
-  ctx.fillStyle = '<%=color%>';
+  ctx.fillStyle = color;
   ctx.fillRect(x*borderSize, y*borderSize, width, height);
   ctx.globalAlpha = 1;
 };
-
 
 class Player{
   constructor (name, color, x, y){
     this.name = name;
     this.color = color;
-    this.radius = 15;
+    this.radius = size*1.5;
     this.x = x;
     this.y = y;
     this.Xvel = 0;
     this.Yvel = 0;
-    this.offset = ctx.measureText(name);
+    this.army = {soldiers: 0, cavalry: 0, archers: 0};
+    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.rectAround = {x: this.x-this.offset.width-1, y: this.y-this.radius-1, width: this.offset.width*2+2, height: this.radius*2+this.offsetHeight+5};
   };
@@ -60,9 +59,11 @@ class Player{
     ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
     ctx.fillStyle = this.color;
     ctx.fill();
+    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
+    this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     ctx.fillStyle = "black";
     ctx.font = this.radius + "px Arial";
-    ctx.fillText(this.name, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
+    ctx.fillText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers), this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
   };
   update (){
     this.offset = ctx.measureText(this.name);
@@ -72,7 +73,7 @@ class Player{
     this.show();
   };
   updateOnline (){
-game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
+    game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
   };
   clear (){
     this.rectAround = {x: this.x-this.offset.width-1, y: this.y-this.radius-1, width: this.offset.width*2+2, height: this.radius*2+this.offsetHeight+5};
@@ -81,31 +82,61 @@ game.send(this.name+";"+";"+this.x+";"+this.y+";"+this.color+";");
 };
 
 class City{
-  constructer (name, x, y){
+  constructor (name, x, y){
     this.name = name;
     this.x = x;
     this.y = y;
+    this.country = 'neutral';
+    this.size = size*3;
+    this.army = {soldiers: 0, cavalry: 0, archers: 0};
+    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
+    this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
+    this.rectAround = {x: this.x - this.offset.width/2 - 2, y: this.y - 2, width: this.size + this.offset.width/2 + 4, height: this.size + this.offsetHeight + 4};
   };
-  
+  show (){
+    this.offset = ctx.measureText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers));
+    this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
+    ctx.drawImage(img, this.x, this.y, this.size, this.size);
+    ctx.fillText(this.name+" - "+(this.army.soldiers+this.army.cavalry+this.army.archers), this.x-this.offset.width/2+this.size/2, this.y+this.size+this.offsetHeight);
+  };
+  clear (){
+    ctx.clearRect(this.x - this.offset.width/2 - 2, this.y - 2, this.size + this.offset.width/2 + 4, this.size + this.offsetHeight + 4);
+  };
 };
 
-
 var players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2)];
+var cities = [
+ new City("Paris", 100*size, 61*size ),
+ new City("London", 5*size, 10*size ),
+ new City("Rome", 100*size, 10*size ),
+ new City("Moscow", 30*size, 50*size ),
+ ];
 let esc;
-game.addEventListener("open", e => {
-  for (player in players){
-    players[player].show();
-  };
-  drawMap();
-  loop();
-});
+img.onload = () => {
+  game.addEventListener("open", e => {
+    for (player in players){
+      players[player].show();
+    };
+    for (city in cities){
+      cities[city].show();
+    };
+    drawMap();
+    loop();
+  });
+};
 function loop() {
   for (player in players){
     players[player].clear();
   };
+  for (city in cities){
+    cities[city].clear();
+  };
   drawMap();
   for (player in players){
     players[player].update();
+  };
+  for (city in cities){
+    cities[city].show();
   };
   if (esc !== "Escape"){
     requestAnimationFrame(loop);
@@ -143,6 +174,6 @@ document.addEventListener("keyup", event => {
     players[0].Xvel = 0;
   };
 });
-    </script>
+</script>
   <%- include('footer') -%>
 
