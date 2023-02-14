@@ -59,9 +59,16 @@ socket.addEventListener('error', error => {
   document.getElementById("mes").placeholder = "Error";
   document.getElementById("mes").disabled = true;
 });
+    function limit (string = '', limit = 0) {  
+  return string.substring(0, limit)
+}
+    let username = '<%=user.username%>';
+      if (username.length > 10){
+        username = limit(username, 10) + "... ";
+      };
     function sendms(){
     if (document.getElementById('mes').value !== ""){
-      socket.send('<%=user.username%>' + ": " + document.getElementById('mes').value);
+      socket.send(username + ": " + document.getElementById('mes').value);
       document.getElementById('mes').value = "";
       };
     };
