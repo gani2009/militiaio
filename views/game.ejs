@@ -128,11 +128,12 @@ function drawMap() {
 
 var players;
 var cities;
+let playersName = [];
 let mapOffsetX = 0;
 let mapOffsetY = 0;
     
 class Player{
-  constructor (name, color, x, y){
+  constructor (name, color, x, y, army, cities){
     if (name.length > 10){
       name = name.slice(0, 11)+"...";
     };
@@ -141,12 +142,17 @@ class Player{
     this.radius = size*1.5;
     this.x = x;
     this.y = y;
-    this.army = {s: 100, m: 1, b: 1, e: 1};
-    this.cities = [];
+    this.army = {s: army.s, m: army.m, b: army.b, e: army.e};
+    this.cities = cities;
     this.offset = ctx.measureText(this.name+" - "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2+2, height: this.radius*2+7};
     this.coins = 100;
+    this.xVel = 0;
+    this.yVel = 0;
+    playersName.push(this.name);
+    this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
+    this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
   };
   show (){
     ctx.beginPath();
@@ -161,6 +167,9 @@ class Player{
     ctx.fillText(this.name+" - "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
   };
   update (){
+    this.x += this.xVel;
+    this.y += this.yVel;
+    this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2, height: this.radius*2+7};
     this.offset = ctx.measureText(this.name+" - "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.show();
@@ -172,16 +181,12 @@ class Player{
       cities = cities + city + '-';
     });
     cities = cities.slice(0, -1);
-    game.send(this.name+";"+(newX-originalX)+";"+(newY-originalY)+";"+this.color+";"+this.army.s+";"+this.army.m+";"+ this.army.b+";"+this.army.e+";"+cities);
+    game.send(this.name+";"+(newX-originalX)+";"+(newY-originalY)+";"+this.color+";"+this.army.s+";"+this.army.m+";"+ this.army.b+";"+this.army.e+";"+cities+";"+"type:gameMessage");
   };
   showCoins(){
-    ctx.globalAlpha = 0.4;
-    ctx.beginPath();
-    ctx.roundRect(canvas.width-105, 5, 100, 40, [20]);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "black";
-    ctx.fillText("Coins: " + this.coins, canvas.width - 90, 30);
+    this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
+    this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
+    ctx.fillText("Coins: "+Math.floor(this.coins), this.x-this.coinOffset.width/2, this.y+this.radius+this.offsetHeight+this.coinOffsetHeight+3);
   };
 };
 
@@ -225,16 +230,21 @@ class City{
     drawCountryBorder(this.rectAround.x, this.rectAround.y, color, 0.3, this.rectAround.width, this.rectAround.height, 'circle');
   };
 };
-
-players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2)];
+<% if (mode !== 'online'){ %>
+players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/3, {s: 100, m: 1, b: 0, e: 1}, []),
+          new Player("<%=player2Name%>", "<%=color2%>", canvas.width/2, canvas.height/1.5, {s: 100, m: 1, b: 0, e: 1}, [])];
+<% } else { %>
+players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2, {s: 100, m: 1, b: 0, e: 1}, [])];
+<% } %>
 cities = [
- new City("Paris", 100*size, 61*size ),
- new City("London", 5*size, 10*size ),
- new City("Rome", 100*size, 10*size ),
- new City("Moscow", 30*size, 50*size ),
+ new City( "Paris", 100*size, 61*size ),
+ new City( "London", 5*size, 10*size ),
+ new City( "Rome", 100*size, 10*size ),
+ new City( "Moscow", 30*size, 50*size ),
  ];
 let esc;
 img.onload = () => {
+  <% if (mode === "online"){ %>
   game.addEventListener("open", e => {
     for (player in players){
       players[player].show();
@@ -243,21 +253,89 @@ img.onload = () => {
       cities[city].show();
     };
     originalX = cities[0].x;
-    originalY = cities[0].y;
+    originalY = cities[0].y;  
     loop();
   });
+    <% } else { %>
+      for (player in players){
+      players[player].show();
+    };
+    for (city in cities){
+      cities[city].show();
+    };
+    originalX = cities[0].x;
+    originalY = cities[0].y;  
+    loop();
+      <% } %>
 };
+function roundTo(n, digits) {
+  if (digits === undefined) {
+    digits = 0;
+  }
+
+  var multiplicator = Math.pow(10, digits);
+  n = parseFloat((n * multiplicator).toFixed(11));
+  return Math.round(n) / multiplicator;
+};
+let turn = 0;
 function loop() {
+  <% if (mode === 'online'){ %>
+  turn += 0.01;
+  turn = roundTo(turn, 2);
+  if (Number.isInteger(turn)){
+    players[0].updateOnline(cities[0].x, cities[0].y);
+  };
+  <% } %>
   ctx.clearRect(0,0,canvas.width, canvas.height);
   drawMap();
+  <% if(mode!== 'online'){%>
+    let playerCollision = rectCollisionDetect(players[0].rectAround.x, players[0].rectAround.y, players[0].rectAround.width, players[0].rectAround.height, players[1].rectAround.x, players[1].rectAround.y, players[1].rectAround.width, players[1].rectAround.height);
+    if (playerCollision){
+      let playerResult = battle(players[0].army, players[1].army);
+      if (playerResult.winner === 'attacker'){
+        players[0].x = canvas.width/2;
+        players[0].y= canvas.height/2;
+        players[0].coins += players[1].coins;
+        players[1].coins = 0;
+      } else {
+        players[1].x = canvas.width/2;
+        players[1].y= canvas.height/2;
+        players[1].coins += players[0].coins;
+        players[0].coins = 0;
+      };
+    };
+  
   for (player in players){
     players[player].update();
+  for (city in cities){
+    cities[city].show();
+    let collison = rectCollisionDetect(cities[city].rectAround.x, cities[city].rectAround.y, cities[city].rectAround.width, cities[city].rectAround.height, players[player].rectAround.x, players[player].rectAround.y, players[player].rectAround.width, players[player].rectAround.height);
+    if (collison){
+      if (cities[city].country !== players[player].name){
+        let result = battle(cities[city].army, players[player].army);
+        console.log(result.winner);
+        if (result.winner === 'attacker'){
+          cities[city].setCountry(players[player].name, players[player].color);
+          players[player].cities.push(cities[city].name);
+          cities[city].coins = 0;
+        };
+      };
+      if (cities[city].country === players[player].name && cities[city].coins > 9 && players[player].coins < 1001){
+        players[player].coins += Math.floor(cities[city].coins);
+        cities[city].coins = 0;
+      };
+    };
   };
+    };
+    <% } else {%>
+for (player in players){
+    players[player].update();
+};
   for (city in cities){
     cities[city].show();
     let collison = rectCollisionDetect(cities[city].rectAround.x, cities[city].rectAround.y, cities[city].rectAround.width, cities[city].rectAround.height, players[0].rectAround.x, players[0].rectAround.y, players[0].rectAround.width, players[0].rectAround.height);
     if (collison){
-      if (cities[city].country === 'neutral'){
+      if (cities[city].country !== players[0].name){
         let result = battle(cities[city].army, players[0].army);
         console.log(result.winner);
         if (result.winner === 'attacker'){
@@ -271,6 +349,8 @@ function loop() {
       };
     };
   };
+  
+    <% } %>
   if (esc !== "Escape"){
     requestAnimationFrame(loop);
   };
@@ -279,25 +359,62 @@ function loop() {
 var velChange = 2;
 
 game.addEventListener("message", msg => {
-  console.log(messageDecoder(msg.data));
+  let player = messageDecoder(msg.data);
+  console.log(player);
+  let i = playersName.indexOf(player.name);
+  if (i == -1){
+    players.push(new Player(player.name, player.color, players[0].x-player.x, players[0].y-player.y, {s: player.s, m: player.m, b: player.b, e: player.e}, player.cities));
+    playersName.push(player.name);
+  } else if(players[0].name != player.name){
+    players[i+1].x = players[0].x-player.x;
+    players[i+1].y = players[0].y-player.y;
+  };
 });
 
 document.addEventListener("keydown", event => {
-  if (event.code === "KeyW" || event.code === "ArrowUp"){
-    mapOffsetY = velChange;
-  };
-  if (event.code === "KeyS" || event.code === "ArrowDown"){
-    mapOffsetY = -velChange;
-  };
-  if (event.code === "KeyA" || event.code === "ArrowLeft"){
-    mapOffsetX = velChange;
-  };
-  if (event.code === "KeyD" || event.code === "ArrowRight"){
-    mapOffsetX = -velChange;
-  };
+  <% if (mode === 'online'){ %>
+    if (event.code === "KeyW" || event.code === "ArrowUp"){
+      mapOffsetY = velChange;
+    };
+    if (event.code === "KeyS" || event.code === "ArrowDown"){
+      mapOffsetY = -velChange;
+    };
+    if (event.code === "KeyA" || event.code === "ArrowLeft"){
+      mapOffsetX = velChange;
+    };
+    if (event.code === "KeyD" || event.code === "ArrowRight"){
+      mapOffsetX = -velChange;
+    };
+  <% } else { %>
+    if (event.code === "KeyW"){
+      players[0].yVel = -velChange;
+    };
+    if (event.code === "ArrowUp"){
+      players[1].yVel = -velChange;
+    };
+    if (event.code === "KeyS"){
+      players[0].yVel = velChange;
+    };
+    if (event.code === "ArrowDown"){
+      players[1].yVel = velChange;
+    };
+    if (event.code === "KeyA"){
+      players[0].xVel = -velChange;
+    };
+    if (event.code === "ArrowLeft"){
+      players[1].xVel = -velChange;
+    };
+    if (event.code === "KeyD"){
+      players[0].xVel = velChange;
+    };
+    if (event.code === "ArrowRight"){
+      players[1].xVel = velChange;
+    };
+  <% } %>
 });
 document.addEventListener("keyup", event => {
   esc = event.code;
+  <% if (mode === 'online'){ %>
   if (event.code === "KeyW" || event.code === "ArrowUp"){
     mapOffsetY = 0;
   };
@@ -318,9 +435,48 @@ document.addEventListener("keyup", event => {
       players[0].army.m = (players[0].army.m+1)/2;
     };
   };
-  if (event.code === "KeyQ"){
-    players[0].updateOnline(cities[0].x, cities[0].y);
+    <% } else { %>
+    if (event.code === "KeyW"){
+      players[0].yVel = 0;
+    };
+    if (event.code === "ArrowUp"){
+      players[1].yVel = 0;
+    };
+    if (event.code === "KeyS"){
+      players[0].yVel = 0;
+    };
+    if (event.code === "ArrowDown"){
+      players[1].yVel = 0;
+    };
+    if (event.code === "KeyA"){
+      players[0].xVel = 0;
+    };
+    if (event.code === "ArrowLeft"){
+      players[1].xVel = 0;
+    };
+    if (event.code === "KeyD"){
+      players[0].xVel = 0;
+    };
+    if (event.code === "ArrowRight"){
+      players[1].xVel = 0;
+    };
+    if (event.code === 'KeyC'){
+    if (players[0].coins - 10 >= 0){
+      players[0].coins -= 10;
+      players[0].army.s += 10;
+      players[0].army.e = (players[0].army.e+1)/2;
+      players[0].army.m = (players[0].army.m+1)/2;
+    };
   };
+    if (event.code === 'KeyM'){
+    if (players[1].coins - 10 >= 0){
+      players[1].coins -= 10;
+      players[1].army.s += 10;
+      players[1].army.e = (players[1].army.e+1)/2;
+      players[1].army.m = (players[1].army.m+1)/2;
+    };
+  };
+    <% } %>
 });
 </script>
   <%- include('footer') -%>

@@ -107,7 +107,8 @@ app.post("/game", function(req, res) {
     userId = req.body.name
   };
   let color = randomColor();
-  res.render("game", { name: userId, color: color });
+  let color2 = randomColor();
+  res.render("game", { name: userId, color: color, color2: color2, mode: req.body.mode, player2Name: req.body.name2 });
 });
 
 app.ws('/chat', function(ws, req) {
