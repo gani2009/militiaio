@@ -47,9 +47,9 @@ passport.deserializeUser(Player.deserializeUser());
 app.get("/", function(req, res) {
 
   if (req.isAuthenticated()) {
-    res.render('loggedhome', { user: req.user });
+    res.render('loggedhome', { user: req.user, page: 'home' });
   } else {
-    res.render("home");
+    res.render("home", {page: 'home'});
   }
 });
 
@@ -72,7 +72,7 @@ app.post("/login", function(req, res) {
 });
 
 app.get("/register", function(req, res) {
-  res.render("register");
+  res.render("register", {page: 'register'});
 });
 app.post("/register", function(req, res) {
   Player.register({ username: req.body.username }, req.body.password, function(err, player) {
@@ -106,9 +106,26 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
+  if (req.body.name2 === ''){
+    req.body.name2 = 'Player 2'
+  }
+  if (req.body.name3 === ''){
+    req.body.name3 = 'Player 3'
+  }
+  if (req.body.name4 === ''){
+    req.body.name4 = 'Player 4'
+  }
   let color = randomColor();
   let color2 = randomColor();
-  res.render("game", { name: userId, color: color, color2: color2, mode: req.body.mode, player2Name: req.body.name2 });
+  let color3 = randomColor();
+  let color4 = randomColor();
+  let ais = req.body.ai;
+  if (ais < 1){
+    ais = 1;
+  } else if (ais > 6){
+    ais = 6;
+  };
+  res.render("game", { page: 'game', name: userId, color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: req.body.name2, player3Name: req.body.name3, player4Name: req.body.name4, ais: ais });
 });
 
 app.ws('/chat', function(ws, req) {

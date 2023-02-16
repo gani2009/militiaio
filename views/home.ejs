@@ -1,4 +1,4 @@
-<%- include('header'); -%>
+<%- include('header', {page: page}); -%>
   <div class="home">
     <div class="first-window" id="chat">
       <h1 class="title">Chat</h1>
@@ -14,11 +14,21 @@
       <h5 class="name">Name: </h5>
       <input class="name form-control" placeholder="Name" name="name" type="text" required/>
         <select class="form-select" name="mode" id="mode" required onchange="player2Func()">
-          <option value="online" selected>Online Multiplayer</option>
-          <option value="local">Local 2 Player</option>
+          <option value="ai">Singleplayer</option>
+          <option value="local" selected>Local 2 Player</option>
+          <option value="local3">Local 3 Player</option>
+          <option value="local4" disabled>Local 4 Player(Coming Soon...)</option>
+          <option value="online" disabled>Online Multiplayer(Coming Soon...)</option>
+          
         </select>
-        <h5 class="name">Player 2 Name: </h5>
-      <input class="name form-control" value="Player 2 Name" name="name2" id="player2Input" type="text" disabled/>
+        <h5 class="name" id="player2label">Player 2 Name: </h5>
+      <input class="name form-control" placeholder="Player 2 Name" name="name2" id="player2Input" type="text" disabled/>
+        <h5 class="name" id="player3label">Player 3 Name: </h5>
+      <input class="name form-control" placeholder="Player 3 Name" name="name3" id="player3Input" type="text" disabled/>
+        <h5 class="name" id="player4label">Player 4 Name: </h5>
+      <input class="name form-control" placeholder="Player 4 Name" name="name4" id="player4Input" type="text" disabled/>
+        <h5 class="name" id="aiLabel">Num Of AI's </h5>
+      <input class="name form-control" placeholder="Min 1, Max 6" value="1" min="1" max="6" name="ai" id="aiInput" type="number" disabled/>
         <button type="submit" class="btn btn-outline-dark button">Play</button>
         </form>
       <div>
@@ -47,17 +57,55 @@
   console.log('WebSocket connection established');
   });
 let mode = document.getElementById('mode');
-let player2 = document.getElementById('player2Input')
+let player2 = document.getElementById('player2Input');
+let player2label = document.getElementById('player2label');
+let player3 = document.getElementById('player3Input');
+let player3label = document.getElementById('player3label');
+let player4 = document.getElementById('player4Input');
+let player4label = document.getElementById('player4label');
+let ai = document.getElementById('aiInput');
+let aiLabel = document.getElementById('aiLabel');
 function player2Func() {
+  player2.disabled = true;
+  player2.style.display = 'none';
+  player2label.style.display = 'none';
+  player3.disabled = true;
+  player3.style.display = 'none';
+  player3label.style.display = 'none';
+  player4.disabled = true;
+  player4.style.display = 'none';
+  player4label.style.display = 'none';
+  ai.disabled = true;
+  ai.style.display = 'none';
+  aiLabel.style.display = 'none';
   if (mode.value === 'local'){
     player2.disabled = false;
-    player2.value = '';
-  } else {
-    player2.disabled = true;
-    player2.value = 'Player 2 Name';
-  }
+    player2.style.display = 'block';
+    player2label.style.display = 'block';
+  } else if (mode.value === 'local3'){
+    player2.disabled = false;
+    player2.style.display = 'block';
+    player2label.style.display = 'block';
+    player3.disabled = false;
+    player3.style.display = 'block';
+    player3label.style.display = 'block';
+  } else if (mode.value === 'local4'){
+    player2.disabled = false;
+    player2.style.display = 'block';
+    player2label.style.display = 'block';
+    player3.disabled = false;
+    player3.style.display = 'block';
+    player3label.style.display = 'block';
+    player4.disabled = false;
+    player4.style.display = 'block';
+    player4label.style.display = 'block';
+  } else if (mode.value === 'ai'){
+    ai.disabled = false;
+    ai.style.display = 'block';
+    aiLabel.style.display = 'block';
+  };
 }
-    
+player2Func();
 socket.addEventListener('message', event => {
   if (event.data !== '' && event.data.split(';')[9] !== 'type:gameMessage'){
   const messageDiv = document.createElement("p");
