@@ -398,9 +398,22 @@ function loop() {
   for (player in players){
     let expr1 = players[player].army.s !== 0;
     let expr2 = players[player].coins > 10;
-    let expr3 = players[player].cities !== [];
+    let expr3 = players[player].cities === [];
+    console.log(players[player].name + " " + expr1 + " " + expr2 + " " + expr3);
     if (expr1 || expr2 || expr3){
       winnerCandidates.push(players[player]);
+    };
+    if (players[player].x + players[player].radius*2 < 0){
+      players[player].x = canvas.width - players[player].radius*2;
+    };
+    if (players[player].x - players[player].radius*2 > canvas.width){
+      players[player].x = 0 + players[player].radius*2;
+    };
+    if (players[player].y + players[player].radius*2 > canvas.height){
+      players[player].y = 0 + players[player].radius*2;
+    };
+    if (players[player].y - players[player].radius*2 < 0){
+      players[player].y = canvas.height - players[player].radius*2;
     };
     players[player].update();
     for (playerI in players){
@@ -408,15 +421,15 @@ function loop() {
     if (playerCollision && playerI !== player){
       let playerResult = battle(players[player].army, players[playerI].army);
       if (playerResult.winner === 'attacker'){
-        players[player].x = canvas.width/2;
-        players[player].y= canvas.height/2;
-        players[playerI].coins += players[player].coins;
-        players[player].coins = 0;
+        players[player].x = getRandomInt(50, canvas.width-50);
+        players[player].y= getRandomInt(50, canvas.height-50);
+        players[playerI].coins += players[player].coins/2;
+        players[player].coins = players[player].coins/2;
       } else {
-        players[playerI].x = canvas.width/2;
-        players[playerI].y= canvas.height/2;
-        players[player].coins += players[playerI].coins;
-        players[playerI].coins = 0;
+        players[playerI].x = getRandomInt(50, canvas.width-50);
+        players[playerI].y= getRandomInt(50, canvas.height-50);
+        players[player].coins += players[playerI].coins/2;
+        players[playerI].coins = players[playerI].coins/2;
       };
     };
     };
@@ -437,7 +450,7 @@ function loop() {
           players[player].cities.push(cities[city].name);
         };
       };
-      if (cities[city].country === players[player].name && players[player].coins < 1001){
+      if (cities[city].country === players[player].name && players[player].coins < 1001 && cities[city].coins > 2){
         players[player].coins += Math.floor(cities[city].coins);
         cities[city].coins = 0;
       };
@@ -481,10 +494,13 @@ for (player in players){
   } else if (winnerCandidates.length === 1){
     paused = true;
     ctx.font = "160px Arial";
-    ctx.fillText(winnerCandidates[0].name + ' won!', 500, 380)
+    ctx.fillStyle = "black";
+    let win = ctx.measureText(winnerCandidates[0].name + ' won!');
+    ctx.fillText(winnerCandidates[0].name + ' won!', (canvas.width-win.width)/2, 380);
   } else {
     paused = true;
     ctx.font = "250px Arial";
+    ctx.fillStyle = "black";
     ctx.fillText('Paused', 400, 450)
   };
     <% } %>

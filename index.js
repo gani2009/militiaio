@@ -144,7 +144,10 @@ app.ws('/game', function(ws, req) {
     });
   });
 });
-
+app.use( (req, res) => {
+    //render page not found
+    res.redirect('/');
+})
 //Start Server
 app.listen(process.env.PORT, () => {
   console.log("Server listening on port " + process.env.PORT);
