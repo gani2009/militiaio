@@ -438,7 +438,6 @@ function loop() {
     if (collison){
       if (cities[city].country !== players[player].name){
         let result = battle(cities[city].army, players[player].army);
-
         if (result.winner === 'attacker'){
           for (playerII in players){
             if (players[playerII].name === cities[city].country){
@@ -472,7 +471,6 @@ for (player in players){
     if (collison){
       if (cities[city].country !== players[0].name){
         let result = battle(cities[city].army, players[0].army);
-        console.log(result.winner);
         if (result.winner === 'attacker'){
           cities[city].setCountry(players[0].name, players[0].color);
           players[0].cities.push(cities[city].name);
@@ -509,7 +507,6 @@ var velChange = 5;
 <% if (mode === 'online'){ %>
 game.addEventListener("message", msg => {
   let player = messageDecoder(msg.data);
-  console.log(player);
   let i = playersName.indexOf(player.name);
   if (i == -1){
     players.push(new Player(player.name, player.color, players[0].x-player.x, players[0].y-player.y, {s: player.s, m: player.m, b: player.b, e: player.e}, player.cities));
