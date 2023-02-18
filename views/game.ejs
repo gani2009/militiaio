@@ -438,7 +438,7 @@ function loop() {
     if (collison){
       if (cities[city].country !== players[player].name){
         let result = battle(cities[city].army, players[player].army);
-        console.log(result.winner);
+
         if (result.winner === 'attacker'){
           for (playerII in players){
             if (players[playerII].name === cities[city].country){
