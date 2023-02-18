@@ -399,7 +399,6 @@ function loop() {
     let expr1 = players[player].army.s !== 0;
     let expr2 = players[player].coins > 10;
     let expr3 = players[player].cities === [];
-    console.log(players[player].name + " " + expr1 + " " + expr2 + " " + expr3);
     if (expr1 || expr2 || expr3){
       winnerCandidates.push(players[player]);
     };
