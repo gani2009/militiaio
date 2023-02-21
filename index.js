@@ -43,13 +43,15 @@ passport.use(Player.createStrategy());
 passport.serializeUser(Player.serializeUser());
 passport.deserializeUser(Player.deserializeUser());
 
+let version = '0.02.12'
+
 // Home page
 app.get("/", function(req, res) {
 
   if (req.isAuthenticated()) {
-    res.render('loggedhome', { user: req.user, page: 'home' });
+    res.render('loggedhome', { user: req.user, page: 'home', version: version });
   } else {
-    res.render("home", {page: 'home'});
+    res.render("home", { page: 'home', version: version });
   }
 });
 
@@ -72,7 +74,7 @@ app.post("/login", function(req, res) {
 });
 
 app.get("/register", function(req, res) {
-  res.render("register", {page: 'register'});
+  res.render("register", { page: 'register' });
 });
 app.post("/register", function(req, res) {
   Player.register({ username: req.body.username }, req.body.password, function(err, player) {
@@ -106,13 +108,13 @@ app.post("/game", function(req, res) {
   } else {
     userId = req.body.name
   };
-  if (req.body.name2 === ''){
+  if (req.body.name2 === '') {
     req.body.name2 = 'Player 2'
   }
-  if (req.body.name3 === ''){
+  if (req.body.name3 === '') {
     req.body.name3 = 'Player 3'
   }
-  if (req.body.name4 === ''){
+  if (req.body.name4 === '') {
     req.body.name4 = 'Player 4'
   }
   let color = randomColor();
@@ -120,11 +122,6 @@ app.post("/game", function(req, res) {
   let color3 = randomColor();
   let color4 = randomColor();
   let ais = req.body.ai;
-  if (ais < 1){
-    ais = 1;
-  } else if (ais > 6){
-    ais = 6;
-  };
   res.render("game", { page: 'game', name: userId, color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: req.body.name2, player3Name: req.body.name3, player4Name: req.body.name4, ais: ais });
 });
 
@@ -144,9 +141,9 @@ app.ws('/game', function(ws, req) {
     });
   });
 });
-app.use( (req, res) => {
-    //render page not found
-    res.redirect('/');
+app.use((req, res) => {
+  //render page not found
+  res.redirect('/');
 })
 //Start Server
 app.listen(process.env.PORT, () => {

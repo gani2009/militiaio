@@ -155,8 +155,10 @@ class Ai{
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.key2 = key;
     this.type = 'ai';
-    this.mode = 'offensive';
-    this.targets = [];
+    this.mode = 'aggressive';
+    this.pTargets = [];
+    this.cTargets = [];
+    this.playing = true;
   };
   show (){
     ctx.beginPath();
@@ -171,6 +173,87 @@ class Ai{
     ctx.fillText(this.name+" - "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
   };
   update (){
+    this.pTargets = players;
+    this.cTargets = cities;
+    if (this.playing){
+      if (this.coins - 15 >= 0){
+        this.coins -= 10;
+        this.army.s += 10;
+        this.army.e = (this.army.e+1)/2;
+        this.army.m = (this.army.m+1)/2;
+      };
+      for (i in this.pTargets){
+        if (this.army.s >= this.pTargets[i].army.s && this.pTargets[i].name !== this.name && this.pTargets[i].playing){
+          if (this.x > this.pTargets[i].x){
+            this.xVel = -5;
+          } else if (this.x < this.pTargets[i].x) {
+            this.xVel = 5;
+          } else {
+            this.xVel = 0;
+          };
+          if (this.y < this.pTargets[i].y){
+            this.yVel = 5;
+          } else if (this.y > this.pTargets[i].y) {
+            this.yVel = -5;
+          } else {
+            this.yVel = 0;
+          };
+        } else if (this.coins <= 10){
+          for (city in this.cTargets){
+            if (this.cities.indexOf(this.cTargets[city].name) == -1 && this.cTargets[city].army.s < this.army.s){
+              if (this.x > this.cTargets[city].x){
+                this.xVel = -5;
+              } else if (this.x < this.cTargets[city].x) {
+                this.xVel = 5;
+              } else {
+                this.xVel = 0;
+              };
+              if (this.y < this.cTargets[city].y){
+                this.yVel = 5;
+              } else if (this.y > this.cTargets[city].y) {
+                this.yVel = -5;
+              } else {
+                this.yVel = 0;
+              };
+            };
+          };
+        } else if (this.cities.length !== 0) {
+          for (city in this.cTarget){
+            if (this.cities.indexOf(this.cTargets[city].name) !== -1){
+              let reinforceColision = rectCollisionDetect(this.x, this.y, this.rectAround.width, this.rectAround.height, this.cTargets[city].x, this.cTargets[city].y, this.cTargets[city].rectAround.width, this.cTargets[city].rectAround.height);
+              if (!reinforceColision ){
+                if (this.x > this.cTargets[city].x){
+                  this.xVel = -5;
+                } else if (this.x < this.cTargets[city].x) {
+                  this.xVel = 5;
+                } else {
+                  this.xVel = 0;
+                };
+                if (this.y < this.cTargets[city].y){
+                  this.yVel = 5;
+                } else if (this.y > this.cTargets[city].y) {
+                  this.yVel = -5;
+                } else {
+                  this.yVel = 0;
+                };
+              } else if (reinforceColision && this.coins - 10 >= 0 && this.cTargets[city].army.s <= this.cities.length * 10) {
+                this.cTargets[city].army.s += 10;
+                this.cTargets[city].army.e = (this.cTargets[city].army.e+1)/2;
+                this.cTargets[city].army.m = (this.cTargets[city].army.m+1)/2;
+                this.coins -= 10;
+              };
+            } else {
+            this.xVel = 0;
+            this.yVel = 0;
+          };
+          };
+        };
+      };
+    };
+    if (!this.playing){
+      this.xVel = 0;
+      this.yVel = 0;
+    };
     this.x += this.xVel;
     this.y += this.yVel;
     this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2, height: this.radius*2+7};
@@ -212,6 +295,7 @@ class Player{
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.key2 = key;
     this.type = 'player';
+    this.playing = true;
   };
   show (){
     ctx.beginPath();
@@ -226,8 +310,10 @@ class Player{
     ctx.fillText(this.name+" - "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
   };
   update (){
-    this.x += this.xVel;
-    this.y += this.yVel;
+    if (this.playing){
+      this.x += this.xVel;
+      this.y += this.yVel;
+    };
     this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2, height: this.radius*2+7};
     this.offset = ctx.measureText(this.name+" - "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
@@ -297,7 +383,7 @@ class City{
   return Math.floor(Math.random() * (max - min) + min);
 }
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyV'),
-          new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyN')];
+          new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')];
   <% } else if(mode === 'local3') { %>
     function getRandomInt(min, max) {
   min = Math.ceil(min);
@@ -306,7 +392,7 @@ players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-5
 }
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Enter'),
-           new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Comma')
+           new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')
 ];
 <% } else if(mode === 'local4') { %>
   function getRandomInt(min, max) {
@@ -316,7 +402,7 @@ players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-5
 }
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Enter'),
-           new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Comma'),
+           new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM'),
            new Player("<%=player4Name%>", "<%=color4%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Mouse')
 ];
 <% } else if(mode === 'ai') { %>
@@ -326,7 +412,7 @@ players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-5
   return Math.floor(Math.random() * (max - min) + min);
 }
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyV')]
-let aiColors = ['red', 'green', 'blue', 'yellow', 'brown', 'purple']
+let aiColors = ['red', 'green', 'blue', 'yellow', 'orange', '#Bb1be6', '#1bd8e6', '#E61bd8', '#E6ca1b', '#E61b89']
 let numOfAIs = <%= ais %>;
 for (var i = 0; i < numOfAIs; i++){
   players.push(new Ai('AI'+players.length, aiColors[players.length-1], getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'None'))
@@ -336,18 +422,18 @@ for (var i = 0; i < numOfAIs; i++){
 players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2, {s: 100, m: 1, b: 0, e: 1}, [])];
 <% } %>
 cities = [
- new City( "Paris", 67*size, 61*size ),
- new City( "London", 5*size, 10*size ),
- new City( "Rome", 95*size, 10*size ),
- new City( "Moscow", 110*size, 50*size ),
-  new City( "Berlin", 71*size, 14*size ),
-  new City( "Amsterdam", 30*size, 80*size ),
-  new City( "Istanbul", 24*size, 40*size ),
-  new City( "Ankara", 140*size, 59*size ),
- new City( "Dubai", 110*size, 88*size ),
-  new City( "Cairo", 180*size, 10*size ),
-  new City( "Zurich", 130*size, 20*size ),
-  new City( "Budapest", 170*size, 85*size ),
+new City( "Paris", 67*size, 61*size ),
+new City( "London", 5*size, 10*size ),
+new City( "Rome", 95*size, 10*size ),
+new City( "Moscow", 110*size, 50*size ),
+new City( "Berlin", 71*size, 14*size ),
+new City( "Amsterdam", 30*size, 80*size ),
+new City( "Istanbul", 24*size, 40*size ),
+new City( "Ankara", 140*size, 59*size ),
+new City( "Dubai", 110*size, 88*size ),
+new City( "Cairo", 180*size, 10*size ),
+new City( "Zurich", 130*size, 20*size ),
+new City( "Budapest", 170*size, 85*size ),
  ];
 let esc;
 img.onload = () => {
@@ -365,9 +451,21 @@ img.onload = () => {
   });
     <% } else { %>
       for (player in players){
+        if (players[player].x % 5 !== 0){
+          players[player].x -= players[player].x % 5;
+        };
+        if (players[player].y % 5 !== 0){
+          players[player].y -= players[player].y % 5;
+        };
       players[player].show();
     };
     for (city in cities){
+      if (cities[city].x % 5 !== 0){
+        cities[city].x -= cities[city].x % 5;
+      };
+      if (cities[city].y % 5 !== 0){
+        cities[city].y -= cities[city].y % 5;
+      };
       cities[city].show();
     };
     originalX = cities[0].x;
@@ -425,12 +523,21 @@ function loop() {
   <% if (mode !== 'online'){%>
     winnerCandidates = [];
   for (player in players){
+    if (players[player].x % 5 !== 0){
+          players[player].x -= players[player].x % 5;
+        };
+        if (players[player].y % 5 !== 0){
+          players[player].y -= players[player].y % 5;
+        };
     let expr1 = players[player].army.s !== 0;
     let expr2 = players[player].coins > 10;
     let expr3 = players[player].cities.length !== 0;
     if (expr1 || expr2 || expr3){
       winnerCandidates.push(players[player]);
-      console.log(expr3);
+    } else {
+      players[player].playing = false;
+      players[player].x = 10000;
+      players[player].y = 10000;
     };
     if (players[player].x + players[player].radius*2 < 0){
       players[player].x = canvas.width - players[player].radius*2;
@@ -444,7 +551,9 @@ function loop() {
     if (players[player].y - players[player].radius*2 < 0){
       players[player].y = canvas.height - players[player].radius*2;
     };
-    players[player].update();
+    if (players[player].playing){
+      players[player].update();
+    };
     for (playerI in players){
       let playerCollision = rectCollisionDetect(players[player].rectAround.x, players[player].rectAround.y, players[player].rectAround.width, players[player].rectAround.height, players[playerI].rectAround.x, players[playerI].rectAround.y, players[playerI].rectAround.width, players[playerI].rectAround.height);
     if (playerCollision && playerI !== player){
@@ -463,6 +572,7 @@ function loop() {
     };
     };
   for (city in cities){
+    
     cities[city].show();
     let collison = rectCollisionDetect(cities[city].rectAround.x, cities[city].rectAround.y, cities[city].rectAround.width, cities[city].rectAround.height, players[player].rectAround.x, players[player].rectAround.y, players[player].rectAround.width, players[player].rectAround.height);
     if (collison){
@@ -519,11 +629,14 @@ for (player in players){
     esc = '';
     requestAnimationFrame(loop);
   } else if (winnerCandidates.length === 1){
-    paused = true;
+    paused = 'end';
     ctx.font = "160px Arial";
     ctx.fillStyle = "black";
     let win = ctx.measureText(winnerCandidates[0].name + ' won!');
     ctx.fillText(winnerCandidates[0].name + ' won!', (canvas.width-win.width)/2, 380);
+    setTimeout(function(){
+      window.location.href = '';
+    }, 10000);
   } else {
     paused = true;
     ctx.font = "250px Arial";
@@ -662,7 +775,7 @@ document.addEventListener("keyup", event => {
     };
   };
     <% } else if (mode === "local") { %>
-    if (event.code === 'Space' && paused == true){
+    if (event.code === 'Space' && paused == true && paused !== 'end'){
       paused = false;
       loop();
     };
@@ -698,7 +811,7 @@ document.addEventListener("keyup", event => {
       players[0].army.m = (players[0].army.m+1)/2;
     };
   };
-    if (event.code === 'KeyM'){
+    if (event.code === 'KeyN'){
     if (players[1].coins - 10 >= 0){
       players[1].coins -= 10;
       players[1].army.s += 10;
@@ -707,7 +820,7 @@ document.addEventListener("keyup", event => {
     };
   };
     <% } else if (mode === "local3") { %>
-    if (event.code === 'Space' && paused == true){
+    if (event.code === 'Space' && paused == true && paused !== 'end'){
       paused = false;
       loop();
     };
@@ -763,7 +876,7 @@ document.addEventListener("keyup", event => {
       players[1].army.m = (players[1].army.m+1)/2;
     };
   };
-    if (event.code === 'KeyM'){
+    if (event.code === 'KeyN'){
     if (players[2].coins - 10 >= 0){
       players[2].coins -= 10;
       players[2].army.s += 10;
@@ -772,7 +885,7 @@ document.addEventListener("keyup", event => {
     };
   };
     <% } else if (mode === 'ai'){ %>
-    if (event.code === 'Space' && paused == true){
+    if (event.code === 'Space' && paused == true && paused !== 'end'){
       paused = false;
       loop();
     };
