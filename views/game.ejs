@@ -154,6 +154,9 @@ class Ai{
     this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.key2 = key;
+    this.type = 'ai';
+    this.mode = 'offensive';
+    this.targets = [];
   };
   show (){
     ctx.beginPath();
@@ -182,7 +185,7 @@ class Ai{
     ctx.fillText("Coins: "+Math.floor(this.coins), this.x-this.coinOffset.width/2, this.y+this.radius+this.offsetHeight+this.coinOffsetHeight+3);
   };
 };
-
+let playerIndex = 0;
 <% } %>
 
     
@@ -208,6 +211,7 @@ class Player{
     this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.key2 = key;
+    this.type = 'player';
   };
   show (){
     ctx.beginPath();
@@ -390,6 +394,31 @@ function loop() {
   if (Number.isInteger(turn)){
     players[0].updateOnline(cities[0].x, cities[0].y);
   };
+  <% } else if (mode === "ai"){ %>
+  cities.sort((a, b) => {
+  if (a.army.s > b.army.s || a.country == 'neutral'){
+    return 1;
+  };
+  if (a.army.s < b.army.s || b.country == 'neutral'){
+    return -1;
+  };
+  return 0;
+  });
+  players.sort((a, b) => {
+    if (a.type === 'player'){
+      playerIndex = players.indexOf(a);
+    };
+    if (b.type === 'player'){
+      playerIndex = players.indexOf(b);
+    };
+    if (a.cities.length > b.cities.length || a.coins > b.coins || a.army.s > b.army.s){
+      return 1;
+    };
+    if (a.cities.length < b.cities.length || a.coins < b.coins || a.army.s < b.army.s){
+      return -1;
+    };
+    return 0;
+  });
   <% } %>
   ctx.clearRect(0,0,canvas.width, canvas.height);
   drawMap();
@@ -398,9 +427,10 @@ function loop() {
   for (player in players){
     let expr1 = players[player].army.s !== 0;
     let expr2 = players[player].coins > 10;
-    let expr3 = players[player].cities === [];
+    let expr3 = players[player].cities.length !== 0;
     if (expr1 || expr2 || expr3){
       winnerCandidates.push(players[player]);
+      console.log(expr3);
     };
     if (players[player].x + players[player].radius*2 < 0){
       players[player].x = canvas.width - players[player].radius*2;
@@ -595,16 +625,16 @@ document.addEventListener("keydown", event => {
     };
   <% } else if (mode === 'ai'){ %>
     if (event.code === "KeyW" || event.code === 'ArrowUp'){
-      players[0].yVel = -velChange;
+      players[playerIndex].yVel = -velChange;
     };
     if (event.code === "KeyS" || event.code === 'ArrowDown'){
-      players[0].yVel = velChange;
+      players[playerIndex].yVel = velChange;
     };
     if (event.code === "KeyA" || event.code === 'ArrowLeft'){
-      players[0].xVel = -velChange;
+      players[playerIndex].xVel = -velChange;
     };
     if (event.code === "KeyD" || event.code === 'ArrowRight'){
-      players[0].xVel = velChange;
+      players[playerIndex].xVel = velChange;
     };
     <% } %>
 });
@@ -747,23 +777,23 @@ document.addEventListener("keyup", event => {
       loop();
     };
     if (event.code === "KeyW" || event.code === 'ArrowUp'){
-      players[0].yVel = 0;
+      players[playerIndex].yVel = 0;
     };
     if (event.code === "KeyS" || event.code === 'ArrowDown'){
-      players[0].yVel = 0;
+      players[playerIndex].yVel = 0;
     };
     if (event.code === "KeyA" || event.code === 'ArrowLeft'){
-      players[0].xVel = 0;
+      players[playerIndex].xVel = 0;
     };
     if (event.code === "KeyD" || event.code === 'ArrowRight'){
-      players[0].xVel = 0;
+      players[playerIndex].xVel = 0;
     };
     if (event.code === "KeyC"){
-      if (players[0].coins - 10 >= 0){
-        players[0].coins -= 10;
-        players[0].army.s += 10;
-        players[0].army.e = (players[0].army.e+1)/2;
-        players[0].army.m = (players[0].army.m+1)/2;
+      if (players[playerIndex].coins - 10 >= 0){
+        players[playerIndex].coins -= 10;
+        players[playerIndex].army.s += 10;
+        players[playerIndex].army.e = (players[playerIndex].army.e+1)/2;
+        players[playerIndex].army.m = (players[playerIndex].army.m+1)/2;
       };
     };
     <% } %>
