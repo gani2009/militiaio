@@ -396,10 +396,10 @@ function loop() {
   };
   <% } else if (mode === "ai"){ %>
   cities.sort((a, b) => {
-  if (a.army.s > b.army.s || a.country == 'neutral'){
+  if (a.army.s < b.army.s || a.country == 'neutral'){
     return 1;
   };
-  if (a.army.s < b.army.s || b.country == 'neutral'){
+  if (a.army.s > b.army.s || b.country == 'neutral'){
     return -1;
   };
   return 0;
