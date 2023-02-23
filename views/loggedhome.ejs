@@ -11,13 +11,14 @@
     <div class="main-window">
     <h1 class="title">Militia.io - <%=version%></h1>
       <form class="form-group" action="/game" method="post">
-      <h5 class="name">Name: </h5>
-      <input class="name form-control" placeholder="Name" name="name" type="text" value="<%=user.username%>"/>
+      <h5 class="name" id="player1label">Name: </h5>
+      <input class="name form-control" placeholder="Name" id="player1Input" name="name" type="text" required value="<%=user.username%>"/>
         <select class="form-select" name="mode" id="mode" required onchange="player2Func()">
-          <option value="ai">Single-player(Beta)</option>
+          <option value="sim">Simulation</option>
+          <option value="ai">Single-player</option>
           <option value="local" selected>Local 2 Player</option>
-          <option value="local3">Local 3 Player(Not fully supported)</option>
-          <option value="local4" disabled>Local 4 Player(Coming Soon...)</option>
+          <option value="local3">Local 3 Player(Laggy)</option>
+          <option value="local4">Local 4 Player(Laggy)</option>
           <option value="online" disabled>Online Multiplayer(Coming Soon...)</option>
           
         </select>
@@ -48,6 +49,8 @@
     console.log('WebSocket connection established');
     });
 let mode = document.getElementById('mode');
+let player1 = document.getElementById('player1Input');
+let player1label = document.getElementById('player1label');
 let player2 = document.getElementById('player2Input');
 let player2label = document.getElementById('player2label');
 let player3 = document.getElementById('player3Input');
@@ -69,6 +72,7 @@ function player2Func() {
   ai.disabled = true;
   ai.style.display = 'none';
   aiLabel.style.display = 'none';
+  player1Input.require = true;
   if (mode.value === 'local'){
     player2.disabled = false;
     player2.style.display = 'block';
@@ -94,6 +98,14 @@ function player2Func() {
     ai.disabled = false;
     ai.style.display = 'block';
     aiLabel.style.display = 'block';
+  } else if (mode.value === 'sim'){
+    ai.disabled = false;
+    ai.style.display = 'block';
+    aiLabel.style.display = 'block';
+    player1Input.disabled = true;
+    player1Input.style.display = 'none';
+    player1Input.require = false;
+    player1label.style.display = 'none';
   };
 }
 player2Func();
