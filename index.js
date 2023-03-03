@@ -102,12 +102,6 @@ app.get("/game", function(req, res) {
   res.redirect("/");
 });
 app.post("/game", function(req, res) {
-  let userId;
-  if (req.isAuthenticated()) {
-    userId = req.user.username
-  } else {
-    userId = req.body.name
-  };
   if (req.body.name2 === '') {
     req.body.name2 = 'Player 2'
   }
@@ -117,12 +111,19 @@ app.post("/game", function(req, res) {
   if (req.body.name4 === '') {
     req.body.name4 = 'Player 4'
   }
+  let names = [req.body.name, req.body.name2, req.body.name3, req.body.name4];
+  let duplicates = [];
+  for (i in names){
+    if (names[i] === names[i-1]){
+      names[i] = names[i] + i;
+    };
+  };
   let color = randomColor();
   let color2 = randomColor();
   let color3 = randomColor();
   let color4 = randomColor();
   let ais = req.body.ai;
-  res.render("game", { page: 'game', name: userId, color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: req.body.name2, player3Name: req.body.name3, player4Name: req.body.name4, ais: ais });
+  res.render("game", { page: 'game', name: names[0], color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: names[1], player3Name: names[2], player4Name: names[3], ais: ais });
 });
 
 app.ws('/chat', function(ws, req) {

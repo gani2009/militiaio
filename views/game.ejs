@@ -16,10 +16,12 @@ ctx.font = "15px Arial";
 var size = 8;
 let img = new Image();
 img.src = "/village.png";
+let europeMap = new Image();
+europeMap.src = '/eurasia.png';
 
 let originalX;
 let originalY;
-    
+
 function messageDecoder(message){
   let decoded = {name: '', x: 0, y: 0, color: '', s: 0, m: 1, b: 0, e: 1, cities: []};
   let colons = message.split(';');
@@ -109,12 +111,29 @@ function battle(defender, attacker){
   return result;
 };
 
-function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2) {
+function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2, res='default') {
     if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
         return false;
-    } else {
+    } else if (res === 'default') {
       return true;
+    } else if (res === 'lake/river check'){
+      let leftSide = x2 < x1 + w1 && x2+25 > x1 + w1;
+      let topSide = y2 < y1 + h1 && y2+25 > y1 + h1;
+      let rightSide = x1 < x2 + w2 && x1+25 > x2 + w2;
+      let bottomSide = y1 < y2 + h2 && y1+25 > y2 + h2;
+      return {top: topSide, left: leftSide, bottom: bottomSide, right: rightSide};
     };
+};
+function rectCircleCollision(circle,rect){
+  var distX = Math.abs(circle.x - rect.x-rect.w/2);
+  var distY = Math.abs(circle.y - rect.y-rect.h/2);
+  if (distX > (rect.w/2 + circle.r)) { return false; };
+  if (distY > (rect.h/2 + circle.r)) { return false; };
+  if (distX <= (rect.w/2)) { return true; };
+  if (distY <= (rect.h/2)) { return true; };
+  var dx=distX-rect.w/2;
+  var dy=distY-rect.h/2;
+  return (dx*dx+dy*dy<=(circle.r*circle.r));
 };
 
 var players;
@@ -153,12 +172,12 @@ class Ai{
     ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
     ctx.fillStyle = this.color;
     ctx.fill();
-    this.offset = ctx.measureText(this.name+" - "+this.army.s);
+    this.offset = ctx.measureText(this.name+" - Army: "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2, height: this.radius*2+7};
     ctx.fillStyle = "black";
     ctx.font = this.radius + "px Arial";
-    ctx.fillText(this.name+" - "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
+    ctx.fillText(this.name+" - Army: "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
   };
   update (){
     this.pTargets = players;
@@ -167,7 +186,6 @@ class Ai{
       
       for (i in this.pTargets){
         if (this.army.s >= this.pTargets[i].army.s && this.pTargets[i].name !== this.name && this.pTargets[i].playing && this.pTargets[i].cities.length == 0){
-          console.log('attack player');
           if (this.x > this.pTargets[i].x){
             this.xVel = -5;
           } else if (this.x < this.pTargets[i].x) {
@@ -184,8 +202,7 @@ class Ai{
           };
         } else if (this.coins <= this.cities.length){
           for (city in this.cTargets){
-            if (this.cities.indexOf(this.cTargets[city].name) == -1 && this.cTargets[city].army.s < this.army.s){
-              console.log('attack city')
+            if (this.cTargets.country !== this.name && this.cTargets[city].army.s < this.army.s){
               if (this.x > this.cTargets[city].x){
                 this.xVel = -5;
               } else if (this.x < this.cTargets[city].x) {
@@ -204,9 +221,7 @@ class Ai{
           };
         } else if (this.cities.length !== 0) {
           for (city in this.cTarget){
-            console.log(this.cities.indexOf(this.cTargets[city].name))
-            if (this.cities.indexOf(this.cTargets[city].name) != -1){
-              console.log('reinforce');
+            if (this.cTargets.country == this.name){
               let reinforceColision = rectCollisionDetect(this.x, this.y, this.rectAround.width, this.rectAround.height, this.cTargets[city].x, this.cTargets[city].y, this.cTargets[city].rectAround.width, this.cTargets[city].rectAround.height);
               if (!reinforceColision ){
                 if (this.x > this.cTargets[city].x){
@@ -267,8 +282,8 @@ let playerIndex = 0;
     
 class Player{
   constructor (name, color, x, y, army, cities, key){
-    if (name.length > 10){
-      name = name.slice(0, 11)+"...";
+    if (name.length > 20){
+      name = name.slice(0, 21)+"...";
     };
     this.name = name;
     this.color = color;
@@ -279,7 +294,7 @@ class Player{
     this.cities = cities;
     this.offset = ctx.measureText(this.name+" - Army: "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2+2, height: this.radius*2+7};
+    this.rectAround = {x: this.x-this.radius, y: this.y-this.radius, width: this.radius*2, height: this.radius*2};
     this.coins = 100;
     this.xVel = 0;
     this.yVel = 0;
@@ -289,6 +304,9 @@ class Player{
     this.key2 = key;
     this.type = 'player';
     this.playing = true;
+    this.xVelChange = 0;
+    this.yVelChange = 0;
+    this.boats = 0;
   };
   show (){
     ctx.fillStyle = this.color;
@@ -297,15 +315,38 @@ class Player{
     ctx.fill();
     this.offset = ctx.measureText(this.name+" - Army: "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2, height: this.radius*2+7};
+    this.rectAround = {x: this.x-this.radius, y: this.y-this.radius, width: this.radius*2, height: this.radius*2};
     ctx.fillStyle = "black";
     ctx.font = this.radius + "px Arial";
     ctx.fillText(this.name+" - Army: "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
+    ctx.strokeRect(this.rectAround.x, this.rectAround.y, this.rectAround.width, this.rectAround.height);
   };
   update (){
-    if (this.playing){
+    let imageData = ctx.getImageData(this.x, this.y, 1, 1);
+    let imageColor = [imageData.data[0], imageData.data[1], imageData.data[2], imageData.data[3]];
+    let checkColor = [229, 240, 246, 255];
+    if (this.playing !== JSON.stringify(imageColor) !== JSON.stringify(checkColor)){
       this.x += this.xVel;
       this.y += this.yVel;
+    };
+    if (JSON.stringify(imageColor) === JSON.stringify(checkColor)){
+      let imageData1 = ctx.getImageData(this.x-15, this.y, 1, 1);
+      let imageColor1 = [imageData1.data[0], imageData1.data[1], imageData1.data[2], imageData1.data[3]];
+      let imageData2 = ctx.getImageData(this.x, this.y-15, 1, 1);
+      let imageColor2 = [imageData2.data[0], imageData2.data[1], imageData2.data[2], imageData2.data[3]];
+      let imageData3 = ctx.getImageData(this.x+15, this.y, 1, 1);
+      let imageColor3 = [imageData3.data[0], imageData3.data[1], imageData3.data[2], imageData3.data[3]];
+      let imageData4 = ctx.getImageData(this.x, this.y+15, 1, 1);
+      let imageColor4 = [imageData4.data[0], imageData4.data[1], imageData4.data[2], imageData4.data[3]];
+      if (JSON.stringify(imageColor1) === JSON.stringify([255, 255, 255, 1])){
+        this.x -= 10;
+      } else if (JSON.stringify(imageColor2) === JSON.stringify([255, 255, 255, 1])){
+        this.y -= 10;
+      } else if (JSON.stringify(imageColor3) === JSON.stringify([255, 255, 255, 1])){
+        this.x += 10;
+      } else if (JSON.stringify(imageColor4) === JSON.stringify([255, 255, 255, 1])){
+        this.y += 10;
+      };
     };
     this.rectAround = {x: this.x-this.radius-1, y: this.y-this.radius-1, width: this.radius*2, height: this.radius*2+7};
     this.offset = ctx.measureText(this.name+" - Army: "+this.army.s);
@@ -351,12 +392,12 @@ class City{
     this.coins = this.coins + this.coinsPerTurn;
     this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.offset = ctx.measureText(this.name+" - Defence: "+this.army.s);
+    this.offset = ctx.measureText(this.name+" -   "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
     this.rectAround = {x: this.x - this.offset.width/2 - 2 - (this.army.s/2), y: this.y - 2, width: this.size + this.offset.width + 4 + (this.army.s/2), height: this.size + this.offsetHeight + 4};
     ctx.drawImage(img, this.x, this.y, this.size, this.size);
     ctx.fillStyle = "black";
-    ctx.fillText(this.name+" - Defence: "+this.army.s, this.x-this.offset.width/2+this.size/2, this.y+this.size+this.offsetHeight);
+    ctx.fillText(this.name+" - "+this.army.s, this.x-this.offset.width/2+this.size/2, this.y+this.size+this.offsetHeight);
     ctx.fillText("Coins: "+Math.floor(this.coins), this.x-this.coinOffset.width/2+this.size/2, this.y+this.size+this.offsetHeight+this.coinOffsetHeight+3);
     if (this.country !== 'neutral'){
       drawCountryBorder(this.rectAround.x, this.rectAround.y, this.color, 0.2, this.rectAround.width, this.rectAround.height, 'circle');
@@ -375,7 +416,8 @@ class City{
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min) + min);
 }
-players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyV'),
+
+players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')];
   <% } else if(mode === 'local3') { %>
     function getRandomInt(min, max) {
@@ -383,6 +425,7 @@ players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-5
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min) + min);
 }
+
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Enter'),
            new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')
@@ -393,6 +436,7 @@ players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-5
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min) + min);
 }
+
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Enter'),
            new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM'),
@@ -427,23 +471,60 @@ for (var i = 0; i < numOfAIs; i++){
 <% } else { %>
 players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2, {s: 100, m: 1, b: 0, e: 1}, [])];
 <% } %>
+let mapScale = 1.3;
+let backgroundX = -5;
+let backgroundY = -330;
+
 cities = [
-new City( "Paris", 67*size, 61*size ),
-new City( "London", 5*size, 10*size ),
-new City( "Rome", 95*size, 10*size ),
-new City( "Moscow", 110*size, 50*size ),
-new City( "Berlin", 71*size, 14*size ),
-new City( "Amsterdam", 30*size, 80*size ),
-new City( "Istanbul", 24*size, 40*size ),
-new City( "Ankara", 140*size, 59*size ),
-new City( "Dubai", 110*size, 88*size ),
-new City( "Cairo", 180*size, 10*size ),
-new City( "Zurich", 130*size, 20*size ),
-new City( "Budapest", 170*size, 85*size ),
+new City( "Paris", 23*size*mapScale, 27*size*mapScale ),
+new City( "London", 19*size*mapScale, 20*size*mapScale ),
+new City( "Rome", 39*size*mapScale, 39*size*mapScale ),
+new City( "Moscow", 80*size*mapScale, 9*size*mapScale ),
+new City( "Berlin", 35*size*mapScale, 20*size*mapScale ),
+new City( "Belgrade", 51*size*mapScale, 32*size*mapScale ),
+new City( "Istanbul", 61*size*mapScale, 40*size*mapScale ),
+new City( "Madrid", 11*size*mapScale, 42*size*mapScale ),
+new City( "Kiev", 63*size*mapScale, 20*size*mapScale ),
+new City( "Athens", 53*size*mapScale, 45*size*mapScale ),
+new City( "Warsaw", 47*size*mapScale, 20*size*mapScale ),
+new City( "Cairo", 68*size*mapScale, 61*size*mapScale ),
+new City( "Edinburg", 15*size*mapScale, 11*size*mapScale ),
+new City( "Riga", 53*size*mapScale, 12*size*mapScale ),
+new City( "Volagrad", 85*size*mapScale, 32*size*mapScale ),
+new City( "Stockholm", 40*size*mapScale, 5*size*mapScale ),
+new City( "Aqtau", 100*size*mapScale, 35*size*mapScale ),
+new City( "Ankara", 72*size*mapScale, 44*size*mapScale ),
+new City( "Rabat", 4*size*mapScale, 58*size*mapScale ),
+new City( "Algeris", 23*size*mapScale, 50*size*mapScale ),
+new City( "Tripoli", 35*size*mapScale, 57*size*mapScale ),
+new City( "Alexandria", 53*size*mapScale, 58*size*mapScale ),
+new City( "Jerusalem", 75*size*mapScale, 57*size*mapScale ),
+new City( "Baghdad", 89*size*mapScale, 56*size*mapScale ),
+new City( "Samara", 95*size*mapScale, 20*size*mapScale ),
+new City( "Perm", 120*size*mapScale, 6*size*mapScale ),
+new City( "St Petersburg", 61*size*mapScale, 5*size*mapScale ),
+new City( "Omsk", 150*size*mapScale, 11*size*mapScale ),
+new City( "Astana", 132*size*mapScale, 20*size*mapScale ),
+new City( "Aktobe", 115*size*mapScale, 25*size*mapScale ),
+new City( "Kazan", 100*size*mapScale, 7*size*mapScale ),
+new City( "Damascus", 79*size*mapScale, 50*size*mapScale ),
+new City( "Tehran", 100*size*mapScale, 50*size*mapScale ),
+new City( "Riyadh", 90*size*mapScale, 68*size*mapScale ),
+new City( "Shiraz", 106*size*mapScale, 63*size*mapScale ),
+new City( "Kabul", 125*size*mapScale, 55*size*mapScale ),
+new City( "Almaty", 132*size*mapScale, 40*size*mapScale ),
+new City( "Samarhand", 115*size*mapScale, 45*size*mapScale ),
+new City( "Islamad", 140*size*mapScale, 57*size*mapScale ),
+new City( "Karachi", 130*size*mapScale, 68*size*mapScale ),
+new City( "Kabul", 125*size*mapScale, 55*size*mapScale ),
+new City( "Almaty", 132*size*mapScale, 40*size*mapScale ),
+new City( "Samarhand", 115*size*mapScale, 45*size*mapScale ),
  ];
+
 let esc;
+
 img.onload = () => {
-  <% if (mode === "online"){ %>
+<% if (mode === "online"){ %>
   game.addEventListener("open", e => {
     for (player in players){
       players[player].show();
@@ -455,7 +536,7 @@ img.onload = () => {
     originalY = cities[0].y;  
     loop();
   });
-    <% } else { %>
+<% } else { %>
       for (player in players){
         if (players[player].x % 5 !== 0){
           players[player].x -= players[player].x % 5;
@@ -475,15 +556,14 @@ img.onload = () => {
       cities[city].show();
     };
     originalX = cities[0].x;
-    originalY = cities[0].y;  
+    originalY = cities[0].y;
     loop();
-      <% } %>
+<% } %>
 };
 function roundTo(n, digits) {
   if (digits === undefined) {
     digits = 0;
-  }
-
+  };
   var multiplicator = Math.pow(10, digits);
   n = parseFloat((n * multiplicator).toFixed(11));
   return Math.round(n) / multiplicator;
@@ -496,6 +576,8 @@ let mouseEvent = {clientX: players[3].x, clientY: players[3].y};
 let mouseX;
 let mouseY;
 <% } %>
+
+    
 function loop() {
   <% if (mode === 'online'){ %>
   turn += 0.01;
@@ -549,8 +631,9 @@ function loop() {
   };
   <% } %>
   ctx.clearRect(0,0,canvas.width, canvas.height);
+  ctx.drawImage(europeMap,backgroundX,backgroundY, europeMap.naturalWidth*mapScale, europeMap.naturalHeight*mapScale);
   <% if (mode !== 'online'){%>
-    winnerCandidates = [];
+  winnerCandidates = [];
   for (player in players){
     if (players[player].x % 5 !== 0){
           players[player].x -= players[player].x % 5;
@@ -569,16 +652,16 @@ function loop() {
       players[player].y = 10000;
     };
     if (players[player].x + players[player].radius*2 < 0){
-      players[player].x = canvas.width - players[player].radius*2;
+      players[player].x = canvas.width - players[player].radius+1;
     };
     if (players[player].x - players[player].radius*2 > canvas.width){
-      players[player].x = 0 + players[player].radius*2;
+      players[player].x = 0 + players[player].radius-1;
     };
-    if (players[player].y + players[player].radius*2 > canvas.height){
-      players[player].y = 0 + players[player].radius*2;
+    if (players[player].y > canvas.height){
+      players[player].y = 0 + players[player].radius+5;
     };
-    if (players[player].y - players[player].radius*2 < 0){
-      players[player].y = canvas.height - players[player].radius*2;
+    if (players[player].y < 0){
+      players[player].y = canvas.height-5;
     };
     if (players[player].playing){
       players[player].update();
@@ -601,11 +684,11 @@ function loop() {
     };
     };
   for (city in cities){
-    if (cities[city].coins >= 30 && cities[city].country == 'neutral'){
+    if (cities[city].coins >= 100 && cities[city].country == 'neutral'){
       cities[city].army.s += 10;
       cities[city].army.e = (cities[city].army.e+1)/2;
       cities[city].army.m = (cities[city].army.m+1)/2;
-      cities[city].coins -= 10;
+      cities[city].coins -= 20;
     };
     cities[city].show();
     let collison = rectCollisionDetect(cities[city].rectAround.x, cities[city].rectAround.y, cities[city].rectAround.width, cities[city].rectAround.height, players[player].rectAround.x, players[player].rectAround.y, players[player].rectAround.width, players[player].rectAround.height);
@@ -625,11 +708,11 @@ function loop() {
         players[player].coins += Math.floor(cities[city].coins);
         cities[city].coins = 0;
       };
-      if (cities[city].country === players[player].name && esc === players[player].key2 && players[player].coins-10 > 0){
+      if (cities[city].country === players[player].name && esc === players[player].key2 && players[player].coins-20 > 0){
         cities[city].army.s += 10;
         cities[city].army.e = (cities[city].army.e+1)/2;
         cities[city].army.m = (cities[city].army.m+1)/2;
-        players[player].coins -= 10;
+        players[player].coins -= 20;
       }
     };
   };
@@ -837,17 +920,17 @@ document.addEventListener("keyup", event => {
     if (event.code === "ArrowRight"){
       players[1].xVel = 0;
     };
-    if (event.code === 'KeyC'){
-    if (players[0].coins - 10 >= 0){
-      players[0].coins -= 10;
+    if (event.code === 'KeyQ'){
+    if (players[0].coins - 20 >= 0){
+      players[0].coins -= 20;
       players[0].army.s += 10;
       players[0].army.e = (players[0].army.e+1)/2;
       players[0].army.m = (players[0].army.m+1)/2;
     };
   };
     if (event.code === 'KeyN'){
-    if (players[1].coins - 10 >= 0){
-      players[1].coins -= 10;
+    if (players[1].coins - 20 >= 0){
+      players[1].coins -= 20;
       players[1].army.s += 10;
       players[1].army.e = (players[1].army.e+1)/2;
       players[1].army.m = (players[1].army.m+1)/2;
@@ -896,24 +979,24 @@ document.addEventListener("keyup", event => {
       players[2].xVel = 0;
     };
     if (event.code === 'KeyQ'){
-    if (players[0].coins - 10 >= 0){
-      players[0].coins -= 10;
+    if (players[0].coins - 20 >= 0){
+      players[0].coins -= 20;
       players[0].army.s += 10;
       players[0].army.e = (players[0].army.e+1)/2;
       players[0].army.m = (players[0].army.m+1)/2;
     };
   };
     if (event.code === 'ShiftRight'){
-    if (players[1].coins - 10 >= 0){
-      players[1].coins -= 10;
+    if (players[1].coins - 20 >= 0){
+      players[1].coins -= 20;
       players[1].army.s += 10;
       players[1].army.e = (players[1].army.e+1)/2;
       players[1].army.m = (players[1].army.m+1)/2;
     };
   };
     if (event.code === 'KeyN'){
-    if (players[2].coins - 10 >= 0){
-      players[2].coins -= 10;
+    if (players[2].coins - 20 >= 0){
+      players[2].coins -= 20;
       players[2].army.s += 10;
       players[2].army.e = (players[1].army.e+1)/2;
       players[2].army.m = (players[1].army.m+1)/2;
@@ -938,8 +1021,8 @@ document.addEventListener("keyup", event => {
       players[playerIndex].xVel = 0;
     };
     if (event.code === "KeyC"){
-      if (players[playerIndex].coins - 10 >= 0){
-        players[playerIndex].coins -= 10;
+      if (players[playerIndex].coins - 20 >= 0){
+        players[playerIndex].coins -= 20;
         players[playerIndex].army.s += 10;
         players[playerIndex].army.e = (players[playerIndex].army.e+1)/2;
         players[playerIndex].army.m = (players[playerIndex].army.m+1)/2;
@@ -959,8 +1042,8 @@ document.addEventListener("mousemove", event => {
 });
 
 document.addEventListener("click", event => {
-  if (players[3].coins - 10 >= 0){
-    players[3].coins -= 10;
+  if (players[3].coins - 20 >= 0){
+    players[3].coins -= 20;
     players[3].army.s += 10;
     players[3].army.e = (players[3].army.e+1)/2;
     players[3].army.m = (players[3].army.m+1)/2;
@@ -979,4 +1062,3 @@ document.oncontextmenu = function(){
 <% } %>
 </script>
   <%- include('footer') -%>
-

@@ -72,7 +72,10 @@ function player2Func() {
   ai.disabled = true;
   ai.style.display = 'none';
   aiLabel.style.display = 'none';
+  player1Input.disabled = false;
+  player1Input.style.display = 'block';
   player1Input.require = true;
+  player1label.style.display = 'block';
   if (mode.value === 'local'){
     player2.disabled = false;
     player2.style.display = 'block';
