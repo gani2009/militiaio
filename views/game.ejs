@@ -133,7 +133,7 @@ function rectCircleCollision(circle,rect){
   return (dx*dx+dy*dy<=(circle.r*circle.r));
 };
 
-var players;
+var players = [];
 var cities;
 let playersName = [];
 let mapOffsetX = 0;
@@ -316,7 +316,6 @@ class Player{
     ctx.fillStyle = "black";
     ctx.font = this.radius + "px Arial";
     ctx.fillText(this.name+" - Army: "+this.army.s, this.x-this.offset.width/2, this.y+this.offsetHeight+this.radius);
-    ctx.strokeRect(this.rectAround.x, this.rectAround.y, this.rectAround.width, this.rectAround.height);
   };
   update (){
     if (this.playing){
@@ -330,12 +329,12 @@ class Player{
     this.showCoins();
   };
   updateOnline (){
-    let cities = '';
+    let playerCities = '';
     this.cities.forEach((city) => {
-      cities = cities + city + '-';
+      playerCities = playerCities + city + '-';
     });
-    cities = cities.slice(0, -1);
-    game.send(this.name+";"+(backgroundX)+";"+(backgroundY)+";"+this.color+";"+this.army.s+";"+this.army.m+";"+ this.army.b+";"+this.army.e+";"+cities+";"+"type:gameMessage");
+    playerCities = playerCities.slice(0, -1);
+    game.send(this.name+";"+(cities[36].x-this.x)+";"+(cities[36].y-this.y)+";"+this.color+";"+this.army.s+";"+this.army.m+";"+ this.army.b+";"+this.army.e+";"+playerCities+";"+"type:gameMessage");
   };
   showCoins(){
     this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
@@ -345,7 +344,7 @@ class Player{
 };
 
 class City{
-  constructor (name, x, y){ 
+  constructor (name, x, y){
     this.name = name;
     this.x = x;
     this.y = y;
@@ -465,7 +464,7 @@ new City( "Kiev", 63*size*mapScale, 20*size*mapScale ),
 new City( "Athens", 53*size*mapScale, 45*size*mapScale ),
 new City( "Warsaw", 47*size*mapScale, 20*size*mapScale ),
 new City( "Cairo", 68*size*mapScale, 61*size*mapScale ),
-new City( "Edinburg", 15*size*mapScale, 11*size*mapScale ),
+new City( "Edinburgh", 15*size*mapScale, 11*size*mapScale ),
 new City( "Riga", 53*size*mapScale, 12*size*mapScale ),
 new City( "Volagrad", 85*size*mapScale, 32*size*mapScale ),
 new City( "Stockholm", 40*size*mapScale, 5*size*mapScale ),
@@ -490,7 +489,7 @@ new City( "Riyadh", 90*size*mapScale, 68*size*mapScale ),
 new City( "Shiraz", 106*size*mapScale, 63*size*mapScale ),
 new City( "Kabul", 125*size*mapScale, 55*size*mapScale ),
 new City( "Almaty", 132*size*mapScale, 40*size*mapScale ),
-new City( "Samarhand", 115*size*mapScale, 45*size*mapScale ),
+new City( "Samarkand", 115*size*mapScale, 45*size*mapScale ),
 new City( "Islamad", 140*size*mapScale, 57*size*mapScale ),
 new City( "Karachi", 130*size*mapScale, 68*size*mapScale ),
  ];
@@ -749,8 +748,8 @@ game.addEventListener("message", msg => {
     players.push(new Player(player.name, player.color, player.x, player.y, {s: player.s, m: player.m, b: player.b, e: player.e}, player.cities));
     playersName.push(player.name);
   } else if(players[0].name != player.name){
-    players[i].x = players[0].x-player.x+backgroundX1;
-    players[i].y = players[0].y-player.y+backgroundY1;
+    players[i].x = cities[36].x-player.x;
+    players[i].y = cities[36].y-player.y;
   };
 });
 <% } %>

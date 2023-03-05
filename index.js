@@ -43,7 +43,7 @@ passport.use(Player.createStrategy());
 passport.serializeUser(Player.serializeUser());
 passport.deserializeUser(Player.deserializeUser());
 
-let version = '0.02.12'
+let version = '0.05.01'
 
 // Home page
 app.get("/", function(req, res) {
