@@ -1,0 +1,178 @@
+<%- include('header', {page: page}) -%>
+
+<div class="game-home" style="backgound-color: white;">
+  <canvas id="canvas" class="game-window" style="background-color: #FAD5A5;"></canvas
+  </div>
+
+  <script type="text/javascript">
+var canvas = document.getElementById('canvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+var ctx = canvas.getContext('2d');
+ctx.font = "15px Arial";
+
+
+function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2, res='default') {
+    if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
+        return false;
+    } else if (res === 'default') {
+      return true;
+    } else if (res === 'extra'){
+      let leftSide = x2 < x1 + w1 && x2+25 > x1 + w1;
+      let topSide = y2 < y1 + h1 && y2+25 > y1 + h1;
+      let rightSide = x1 < x2 + w2 && x1+25 > x2 + w2;
+      let bottomSide = y1 < y2 + h2 && y1+25 > y2 + h2;
+      return {top: topSide, left: leftSide, bottom: bottomSide, right: rightSide};
+    };
+};
+function rectCircleCollision(circle,rect){
+  var distX = Math.abs(circle.x - rect.x-rect.w/2);
+  var distY = Math.abs(circle.y - rect.y-rect.h/2);
+  if (distX > (rect.w/2 + circle.r)) { return false; };
+  if (distY > (rect.h/2 + circle.r)) { return false; };
+  if (distX <= (rect.w/2)) { return true; };
+  if (distY <= (rect.h/2)) { return true; };
+  var dx=distX-rect.w/2;
+  var dy=distY-rect.h/2;
+  return (dx*dx+dy*dy<=(circle.r*circle.r));
+};
+
+
+class Player {
+  constructor (x, y, color){
+    this.x = x;
+    this.y = y;
+    this.yVel = 0;
+    this.xVel = 0;
+    this.color = color;
+    this.carIndex = 0;
+    this.inCar = false;
+  };
+  show (){
+    this.x += this.xVel;
+    this.y += this.yVel;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 15, 0, 2 * Math.PI);
+    ctx.fill();
+    this.strokeStyle = "black";
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 15, 0, 2 * Math.PI);
+    ctx.stroke();
+  };
+};
+
+
+class Car {
+  constructor(x, y, color){
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.angle = 0;
+  };
+  show(){
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(( Math.PI / 180 ) * this.angle);
+    ctx.fillStyle = this.color;
+    ctx.fillRect(0, 0, 80, 130);
+    ctx.restore();
+  };
+};
+
+
+class Road {
+  constructor (y) {
+    this.w = 250;
+    this.h = canvas.height+10;
+    this.x = canvas.width/2-this.w/2;
+    this.y = y;
+  };
+  show (){
+    ctx.fillStyle = "#b7b1ae";
+    ctx.fillRect(this.x, this.y, this.w, this.h);
+    ctx.fillStyle = "#f7b500";
+    ctx.fillRect(this.x+((this.w/2)-15), this.y, 10, this.h);
+    ctx.fillRect(this.x+((this.w/2)+5), this.y, 10, this.h);
+  };
+};
+
+
+let roads = [new Road(-10)];
+let players = [new Player(canvas.width*0.75, canvas.height*0.75, "red")];
+let cars = [new Car(canvas.width*0.7, canvas.height/2, "black")];
+let paused = false;
+let objective = "get inside the car.";
+let message = "";
+let playerSpeed = 5;
+
+function loop(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (road in roads){
+    roads[road].show();
+  };
+  for (player in players){
+    for (car in cars){
+      let carPlayer = rectCircleCollision({x: players[player].x, y: players[player].y, r: 15}, {x: cars[car].x, y: cars[car].y, w: 80, h: 130});
+      if (carPlayer && !players[player].inCar){
+        if (players[player].x < cars[car].x){
+          players[player].x -= playerSpeed;
+        };
+        if (players[player].x > cars[car].x+80){
+          players[player].x += playerSpeed;
+        };
+        if (players[player].y < cars[car].y){
+          players[player].y -= playerSpeed;
+        };
+        if (players[player].y > cars[car].y+130){
+          players[player].y += playerSpeed;
+        };
+      };
+    };
+    players[player].show();
+  };
+  for (car in cars){
+    cars[car].show();
+  };
+  ctx.fillStyle = "black";
+  ctx.textAlign = "center";
+  ctx.font = "50px Ariel"
+  ctx.fillText("Objective: " + objective, canvas.width/2, 100);
+  ctx.textAlign = "start";
+  if (!paused){
+    requestAnimationFrame(loop);
+  };
+};
+
+window.addEventListener('DOMContentLoaded', loop, false);
+
+document.addEventListener("keydown", event => {
+  if (event.code === 'KeyW'){
+    players[0].yVel = -playerSpeed;
+  };
+  if (event.code === 'KeyA'){
+    players[0].xVel = -playerSpeed;
+  };
+  if (event.code === 'KeyS'){
+    players[0].yVel = playerSpeed;
+  };
+  if (event.code === 'KeyD'){
+    players[0].xVel = playerSpeed;
+  };
+});
+document.addEventListener("keyup", event => {
+  if (event.code === 'KeyW'){
+    players[0].yVel = 0;
+  };
+  if (event.code === 'KeyA'){
+    players[0].xVel = 0;
+  };
+  if (event.code === 'KeyS'){
+    players[0].yVel = 0;
+  };
+  if (event.code === 'KeyD'){
+    players[0].xVel = 0;
+  };
+});
+  </script>
+  <%- include('footer') -%>

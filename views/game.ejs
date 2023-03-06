@@ -549,7 +549,7 @@ let mouseY;
     
 function loop() {
   <% if (mode === 'online'){ %>
-  turn += 0.02;
+  turn += 0.06;
   turn = roundTo(turn, 2);
   if (Number.isInteger(turn)){
     players[0].updateOnline();

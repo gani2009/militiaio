@@ -1,9 +1,3 @@
-// the idea is like a army building but with villages, mountains and somekind of story line to make it better.
-// I would also want different rooms that can be created in the URL and are multiplayer.
-// Also add borders with diplomacy and mini-map with the borders which can be expanded.
-// If you declare war or attack everyone in room get a pop-up that you did so.
-// Gold can be found in mountains and villages next to lakes/oceans.
-// Boats for troop transport or trade would be better.
 require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -13,42 +7,41 @@ const session = require('express-session');
 const passport = require('passport');
 const passportlocalmongoose = require('passport-local-mongoose');
 var randomColor = require('randomcolor');
-mongoose.connect(process.env.MONGODB);
-mongoose.set('strictQuery', true);
+// mongoose.connect(process.env.MONGODB);
 
 const app = express();
 var expressWs = require('express-ws')(app);
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({
-  secret: process.env.SECRET,
-  resave: false,
-  saveUninitialized: false
-}));
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(session({
+//   secret: process.env.SECRET,
+//   resave: false,
+//   saveUninitialized: false
+// }));
+// app.use(passport.initialize());
+// app.use(passport.session());
 
-const Schema = new mongoose.Schema({
-  username: String,
-  plays: Number,
-  high: Number,
-});
+// const Schema = new mongoose.Schema({
+//   username: String,
+//   plays: Number,
+//   high: Number,
+// });
 
-Schema.plugin(passportlocalmongoose);
+// Schema.plugin(passportlocalmongoose);
 
-const Player = mongoose.model("Millitia", Schema);
-passport.use(Player.createStrategy());
+// const Player = mongoose.model("Millitia", Schema);
+// passport.use(Player.createStrategy());
 
-passport.serializeUser(Player.serializeUser());
-passport.deserializeUser(Player.deserializeUser());
+// passport.serializeUser(Player.serializeUser());
+// passport.deserializeUser(Player.deserializeUser());
 
-let version = '0.05.01'
+let version = '0.05.02';
 
 // Home page
 app.get("/", function(req, res) {
-
-  if (req.isAuthenticated()) {
+  req.isAuthenticated = false;
+  if (req.isAuthenticated) {
     res.render('loggedhome', { user: req.user, page: 'home', version: version });
   } else {
     res.render("home", { page: 'home', version: version });
@@ -76,18 +69,19 @@ app.post("/login", function(req, res) {
 app.get("/register", function(req, res) {
   res.render("register", { page: 'register' });
 });
-app.post("/register", function(req, res) {
-  Player.register({ username: req.body.username }, req.body.password, function(err, player) {
-    if (err) {
-      console.log(err);
-      res.redirect("/");
-    } else {
-      passport.authenticate("local")(req, res, function() {
-        res.redirect("/");
-      });
-    }
-  });
-});
+// app.post("/register", function(req, res) {
+//   Player.register({ username: req.body.username }, req.body.password, function(err, player) {
+//     if (err) {
+//       console.log(err);
+//       res.redirect("/");
+//     } else {
+//       passport.authenticate("local")(req, res, function() {
+//         res.redirect("/");
+//       });
+//     }
+//   });
+// });
+
 app.get("/logout", function(req, res) {
   req.logout(function(err) {
     if (err) {
@@ -98,6 +92,11 @@ app.get("/logout", function(req, res) {
     }
   })
 });
+
+app.get("/road-trip", function(req, res) {
+  res.render("roadtrip", { page: 'game' });
+});
+
 app.get("/game", function(req, res) {
   res.redirect("/");
 });
@@ -113,8 +112,8 @@ app.post("/game", function(req, res) {
   }
   let names = [req.body.name, req.body.name2, req.body.name3, req.body.name4];
   let duplicates = [];
-  for (i in names){
-    if (names[i] === names[i-1]){
+  for (i in names) {
+    if (names[i] === names[i - 1]) {
       names[i] = names[i] + i;
     };
   };
