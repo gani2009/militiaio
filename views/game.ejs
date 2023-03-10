@@ -22,6 +22,9 @@ europeMap.src = '/eurasia.png';
 function messageDecoder(message){
   let decoded = {name: '', x: 0, y: 0, color: '', s: 0, m: 1, b: 0, e: 1, cities: []};
   let colons = message.split(';');
+  if ( colons[0] == 'updateCity'){
+    return false;
+  };
   decoded.name = colons[0];
   decoded.x = Number(colons[1]);
   decoded.y = Number(colons[2]);
@@ -32,6 +35,18 @@ function messageDecoder(message){
   decoded.e = colons[7]
   let cities = colons[8].split('-');
   decoded.cities = cities;
+  return decoded;
+};
+function messageDecoderCity(message){
+  let decoded = {index: -1, color: '', s: 0, m: 1, b: 0, e: 1, country: ''};
+  let colons = message.split(';');
+  decoded.index = Number(colons[1]);
+  decoded.color = colons[2];
+  decoded.s = colons[3];
+  decoded.m = colons[4];
+  decoded.b = colons[5];
+  decoded.e = colons[6]
+  decoded.country = colons[7];
   return decoded;
 };
 
@@ -275,10 +290,9 @@ class Ai{
 };
 let playerIndex = 0;
 <% } %>
-
-    
+ 
 class Player{
-  constructor (name, color, x, y, army, cities, key){
+  constructor (name, color, x, y, army, cities, key="None"){
     if (name.length > 20){
       name = name.slice(0, 21)+"...";
     };
@@ -359,6 +373,7 @@ class City{
     this.coinsPerTurn = 0.02;
     this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
+    this.isDefault = true;
   };
   show (){
     this.x += mapOffsetX;
@@ -366,9 +381,9 @@ class City{
     this.coins = this.coins + this.coinsPerTurn;
     this.coinOffset = ctx.measureText("Coins: "+Math.floor(this.coins));
     this.coinOffsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.offset = ctx.measureText(this.name+" -   "+this.army.s);
+    this.offset = ctx.measureText(this.name+" - "+this.army.s);
     this.offsetHeight = this.offset.actualBoundingBoxAscent + this.offset.actualBoundingBoxDescent;
-    this.rectAround = {x: this.x - this.offset.width/2 - 2 - (this.army.s/2), y: this.y - 2, width: this.size + this.offset.width + 4 + (this.army.s/2), height: this.size + this.offsetHeight + 4};
+    this.rectAround = {x: this.x - this.offset.width/2 - 2, y: this.y - 2, width: this.size + this.offset.width + 4, height: this.size + this.offsetHeight + 4};
     ctx.drawImage(img, this.x, this.y, this.size, this.size);
     ctx.fillStyle = "black";
     ctx.fillText(this.name+" - "+this.army.s, this.x-this.offset.width/2+this.size/2, this.y+this.size+this.offsetHeight);
@@ -380,48 +395,32 @@ class City{
   setCountry(country, color){
     this.country = country;
     this.color = color;
+    this.isDefault = false;
     drawCountryBorder(this.rectAround.x, this.rectAround.y, color, 0.2, this.rectAround.width, this.rectAround.height, 'circle');
   };
 };
-    
-<% if (mode === 'local'){ %>
-  function getRandomInt(min, max) {
+
+function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min) + min);
-}
-
+};
+    
+<% if (mode === 'local'){ %>
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')];
   <% } else if(mode === 'local3') { %>
-    function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min);
-}
-
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Enter'),
            new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')
 ];
 <% } else if(mode === 'local4') { %>
-  function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min);
-}
-
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Digit1'),
           new Player("<%=player2Name%>", "<%=color2%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Enter'),
            new Player("<%=player3Name%>", "<%=color3%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM'),
            new Player("<%=player4Name%>", "<%=color4%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'Mouse')
 ];
 <% } else if(mode === 'ai') { %>
-  function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min);
-}
 players = [new Player("<%=name%>", "<%=color%>", getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'KeyV')]
 let aiColors = ['red', 'green', 'blue', 'yellow', 'orange', '#Bb1be6', '#1bd8e6', '#E61bd8', '#E6ca1b', '#E61b89']
 let numOfAIs = <%= ais %>;
@@ -431,23 +430,17 @@ for (var i = 0; i < numOfAIs; i++){
 
 <% } else if(mode === 'sim') { %>
 players = [];
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min);
-}
 let aiColors = ['red', 'green', 'blue', 'yellow', '#B2ff0a', '#Bb1be6', '#1bd8e6', '#0affb2', '#E6ca1b', '#E61b89']
 let numOfAIs = <%= ais %>;
 for (var i = 0; i < numOfAIs; i++){
   players.push(new Ai('AI'+players.length, aiColors[players.length], getRandomInt(50, canvas.width-50), getRandomInt(50, canvas.height-50), {s: 100, m: 1, b: 0, e: 1}, [], 'None'))
 };
-  
 <% } else { %>
 players = [new Player("<%=name%>", "<%=color%>", canvas.width/2, canvas.height/2, {s: 100, m: 1, b: 0, e: 1}, [], 'KeyM')];
 <% } %>
-let mapScale = 1.3;
-let backgroundX = -5;
-let backgroundY = -330;
+let mapScale = size*0.16;
+let backgroundX = size*-0.62;
+let backgroundY = size*-41.2;
 let backgroundX1 = backgroundX;
 let backgroundY1 = backgroundY;
 
@@ -493,6 +486,15 @@ new City( "Samarkand", 115*size*mapScale, 45*size*mapScale ),
 new City( "Islamad", 140*size*mapScale, 57*size*mapScale ),
 new City( "Karachi", 130*size*mapScale, 68*size*mapScale ),
  ];
+
+for ( i in cities ){
+  if (cities[i].x + cities[i].size > canvas.width){
+    cities[i].x = cities[i].x - cities[i].size*2;
+  };
+  if (cities[i].y + cities[i].size > canvas.height){
+    cities[i].y = cities[i].y - cities[i].size*2;
+  };
+};
 
 let esc;
 
@@ -549,7 +551,7 @@ let mouseY;
     
 function loop() {
   <% if (mode === 'online'){ %>
-  turn += 0.06;
+  turn += 0.2;
   turn = roundTo(turn, 2);
   if (Number.isInteger(turn)){
     players[0].updateOnline();
@@ -562,7 +564,7 @@ function loop() {
   };
   <% } else if (mode === "ai" || mode === 'sim'){ %>
   cities.sort((a, b) => {
-  if (a.army.s < b.army.s || a.country !== 'neutral'){
+  if (a.army.s < b.army.s || a.country !== 'neutral'){   3215
     return 1;
   };
   if (a.army.s > b.army.s || b.country !== 'neutral'){
@@ -688,7 +690,7 @@ function loop() {
         cities[city].army.e = (cities[city].army.e+1)/2;
         cities[city].army.m = (cities[city].army.m+1)/2;
         players[player].coins -= 20;
-      }
+      };
     };
   };
     };
@@ -707,14 +709,28 @@ for (player in players){
         if (result.winner === 'attacker'){
           cities[city].setCountry(players[0].name, players[0].color);
           players[0].cities.push(cities[city].name);
+          players[0].coins += cities[city].coins;
           cities[city].coins = 0;
+          cities[city].isDefault = false;
+        } else {
+          cities[city].isDefault = false;
         };
-      } else if (cities[city].country !== 'neutral'){
+      } else if (cities[city].country == players[0].name && cities[city].coins > 1){
         players[0].coins += Math.floor(cities[city].coins);
         cities[city].coins = 0;
       };
+      if (cities[city].country === players[0].name && esc === players[0].key2 && players[0].coins-10 > 0){
+        cities[city].army.s = Number(cities[city].army.s+10);
+        cities[city].army.e = (cities[city].army.e+1)/2;
+        cities[city].army.m = (cities[city].army.m+1)/2;
+        players[player].coins -= 10;
+      };
+    };
+    if (!cities[city].isDefault){
+      game.send("updateCity"+";"+i+";"+cities[city].color+";"+cities[city].army.s+";"+cities[city].army.m+";"+ cities[city].army.b+";"+cities[city].army.e+";"+cities[city].country+";"+"undefined"+";"+"type:gameMessage");
     };
   };
+  esc = '';
   requestAnimationFrame(loop);
     <% } %>
   <% if (mode !== 'online'){ %>
@@ -743,13 +759,35 @@ var velChange = 5;
 <% if (mode === 'online'){ %>
 game.addEventListener("message", msg => {
   let player = messageDecoder(msg.data);
-  let i = playersName.indexOf(player.name);
-  if (i == -1){
-    players.push(new Player(player.name, player.color, player.x, player.y, {s: player.s, m: player.m, b: player.b, e: player.e}, player.cities));
-    playersName.push(player.name);
-  } else if(players[0].name != player.name){
-    players[i].x = cities[36].x-player.x;
-    players[i].y = cities[36].y-player.y;
+  if (player !== false){
+    let i = playersName.indexOf(player.name);
+    if (i == -1) {
+      players.push(new Player(player.name, player.color, player.x, player.y, {s: player.s, m: player.m, b: player.b, e: player.e}, player.cities));
+      playersName.push(player.name);
+      for (i in cities){
+        for (city in player.cities){
+          if (cities[i].name == player.cities[city]){
+            cities[i].setCountry(player.name, player.color);
+          };
+        };
+      };
+    } else if (players[0].name != player.name){
+      players[i].x = cities[36].x-player.x;
+      players[i].y = cities[36].y-player.y;
+      players[i].army = {s: player.s, m: player.m, b: player.b, e: player.e};
+      players[i].color = player.color;
+    };
+  } else {
+    let city = messageDecoderCity(msg.data);
+    if (cities[city.index].country !== players[0].name){
+      console.log(city);
+      console.log(cities[city.index]);
+      cities[city.index].setCountry(city.country, city.color);
+      cities[city.index].army.s = city.s;
+      cities[city.index].army.m = city.m;
+      cities[city.index].army.b = city.b;
+      cities[city.index].army.e = city.e;
+    };
   };
 });
 <% } %>

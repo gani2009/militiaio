@@ -1,12 +1,12 @@
 <%- include('header', {page: page}); -%>
   <div class="home">
     <div class="register-window">
-    <h1 class="title">Register(Database down)</h1>
-      <form class="form-group" action="#" method="post">
+    <h1 class="title">Register</h1>
+      <form class="form-group" action="/register" method="post">
       <h5 class="name">Username: </h5>
-      <input class="name form-control" placeholder="Username" name="username" type="text" max="15" disabled/>
+      <input class="name form-control" placeholder="Username" name="username" type="text" max="15"/>
       <h5 class="name">Create Password: </h5>
-        <input class="name form-control" placeholder="Password" name="password" type="password" min="6" disabled />
+        <input class="name form-control" placeholder="Password" name="password" type="password" min="6" />
         <button type="submit" class="btn btn-outline-secondary button" style="display: inline; float: left;">Register</button>
         </form>
     </div>

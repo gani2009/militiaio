@@ -5,13 +5,32 @@
   </div>
 
   <script type="text/javascript">
+    // https://cdn.babylonjs.com/babylon.js
 var canvas = document.getElementById('canvas');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 ctx.font = "15px Arial";
+function toDegrees (angle){
+  return angle * (180 / Math.PI);
+};
+function toRadians (angle){
+	return angle * (Math.PI / 180);
+};
+function sinDegree(degrees){
+	return Math.round(Math.sin(toRadians(degrees)) * 1000) / 1000;
+};
+function cosDegree(degrees){
+	return Math.round(Math.cos(toRadians(degrees)) * 1000 ) / 1000;
+};
 
-
+function cursorRect(x, y, width, height, mouseX, mouseY) {
+    if(mouseX > x && mouseX < x + width && mouseY > y && mouseY < y + height) {
+        return true;
+    }
+    return false;
+};
+    
 function rectCollisionDetect(x1, y1, w1, h1, x2, y2, w2, h2, res='default') {
     if (x2 > w1 + x1 || x1 > w2 + x2 || y2 > h1 + y1 || y1 > h2 + y2){
         return false;
@@ -37,18 +56,63 @@ function rectCircleCollision(circle,rect){
   return (dx*dx+dy*dy<=(circle.r*circle.r));
 };
 
+let mapOffsetX = 0;
+let mapOffsetY = 0;
+
+
+class Object {
+  constructor (x, y, color, w=10, h=10, dots=0){
+    this.x = x;
+    this.y = y;
+    this.c = color;
+    this.w = w;
+    this.h = h;
+    this.d = dots;
+    this.dXY = [];
+    for (let i = 0; i < this.d; i++){
+      this.dXY.push([Math.floor(Math.random()*this.w), Math.floor(Math.random()*this.h)]);
+    };
+  };
+  show(){
+    this.x += mapOffsetX;
+    this.y += mapOffsetY;
+    if (this.y - this.h*1.5 > canvas.height){
+      this.y = 0 - this.h*1.5;
+      this.x = Math.floor(Math.random()*canvas.width);
+    } else if (this.y + this.h*1.5 < 0){
+      this.y = canvas.height + this.h*1.5;
+      this.x = Math.floor(Math.random()*canvas.width);
+    };
+    if (this.x - this.w*1.5 > canvas.width){
+      this.x = 0 - this.w*1.5;
+      this.y = Math.floor(Math.random()*canvas.height);
+    } else if (this.x + this.w*1.5 < 0){
+      this.x = canvas.width + this.w*1.5;
+      this.y = Math.floor(Math.random()*canvas.height);
+    };
+    ctx.fillStyle = this.c;
+    ctx.fillRect(this.x, this.y, this.w, this.h);
+    ctx.fillStyle = "white";
+    for (let i = 0; i < this.d; i++){
+      ctx.fillRect(this.x+this.dXY[i][0], this.y+this.dXY[i][1], 2, 2);
+    };
+  };
+};
+
 
 class Player {
   constructor (x, y, color){
     this.x = x;
     this.y = y;
-    this.yVel = 0;
-    this.xVel = 0;
     this.color = color;
     this.carIndex = 0;
     this.inCar = false;
+    this.xVel = 0;
+    this.yVel = 0;
   };
   show (){
+    this.x += mapOffsetX;
+    this.y += mapOffsetY;
     this.x += this.xVel;
     this.y += this.yVel;
     ctx.fillStyle = this.color;
@@ -69,13 +133,22 @@ class Car {
     this.y = y;
     this.color = color;
     this.angle = 0;
+    this.velocity = 0;
+    this.w = 80;
+    this.h = 130;
+    this.f = 45;
   };
   show(){
+    this.x += mapOffsetX;
+    this.y += mapOffsetY;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(this.x+this.w/2, this.y+this.h/2);
     ctx.rotate(( Math.PI / 180 ) * this.angle);
     ctx.fillStyle = this.color;
-    ctx.fillRect(0, 0, 80, 130);
+    ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+    ctx.fillStyle = "white";
+    ctx.fillRect(-this.w/2, -this.h/2, 15, 10);
+    ctx.fillRect(this.w/2-15, -this.h/2, 15, 10);
     ctx.restore();
   };
 };
@@ -83,12 +156,13 @@ class Car {
 
 class Road {
   constructor (y) {
-    this.w = 250;
+    this.w = 400;
     this.h = canvas.height+10;
     this.x = canvas.width/2-this.w/2;
     this.y = y;
   };
   show (){
+    this.x += mapOffsetX;
     ctx.fillStyle = "#b7b1ae";
     ctx.fillRect(this.x, this.y, this.w, this.h);
     ctx.fillStyle = "#f7b500";
@@ -97,36 +171,141 @@ class Road {
   };
 };
 
-
+// World Settings
 let roads = [new Road(-10)];
 let players = [new Player(canvas.width*0.75, canvas.height*0.75, "red")];
 let cars = [new Car(canvas.width*0.7, canvas.height/2, "black")];
-let paused = false;
-let objective = "get inside the car.";
+let cacti = [];
+let numberOfCacti = 50;
+for (let i = 0; i < numberOfCacti; i++){
+  cacti.push(new Object(Math.floor(Math.random()*canvas.width), Math.floor(Math.random()*canvas.height), "#899F4A", 10, 20, 5));
+};
+let worldSpeed = 1;
+let objective = "";
 let message = "";
-let playerSpeed = 5;
+let playerSpeed = 5*worldSpeed;
+let carSpeed = 0.2*worldSpeed;
+let maxCarSpeed = -10*worldSpeed;
+let carFriction = 0.02*worldSpeed;
+let brakeFriction = 0.2*worldSpeed;
+let controls = {};
+let sensitivity = 2;
+let settingsImage = new Image();
+settingsImage.src = "/gear.png";
+let settings = false;
 
 function loop(){
+  // Controls: 
+  if (controls['KeyW'] == true){
+    if (!players[0].inCar){
+      players[0].yVel = -playerSpeed;
+    } else {
+      cars[players[0].carIndex].velocity -= carSpeed;
+      if (cars[players[0].carIndex].velocity < maxCarSpeed){
+        cars[players[0].carIndex].velocity = maxCarSpeed;
+      };
+      cars[players[0].carIndex].y += cars[players[0].carIndex].velocity * cosDegree(cars[players[0].carIndex].angle);
+      cars[players[0].carIndex].x -= cars[players[0].carIndex].velocity * sinDegree(cars[players[0].carIndex].angle);
+    };
+  };
+  if (controls['KeyA'] == true){
+    if (players[0].inCar && cars[players[0].carIndex].velocity != 0){
+      cars[players[0].carIndex].angle -= sensitivity;
+    } else if (!players[0].inCar){
+      players[0].xVel = -playerSpeed;
+    };
+  };
+  if (controls['KeyS'] == true){
+    if (!players[0].inCar){
+      players[0].yVel = playerSpeed;
+    } else {
+      cars[players[0].carIndex].velocity += brakeFriction;
+      if (cars[players[player].carIndex].velocity > 0){
+        cars[players[player].carIndex].velocity = 0;
+      };
+      cars[players[0].carIndex].y += cars[players[0].carIndex].velocity * cosDegree(cars[players[0].carIndex].angle);
+      cars[players[0].carIndex].x -= cars[players[0].carIndex].velocity * sinDegree(cars[players[0].carIndex].angle);
+    };
+  };
+  if (controls['KeyD'] == true){
+    if (players[0].inCar && cars[players[0].carIndex].velocity != 0){
+      cars[players[0].carIndex].angle += sensitivity;
+    } else if (!players[0].inCar){
+      players[0].xVel = playerSpeed;
+    };
+  };
+  // Main loop
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (cactus in cacti){
+    cacti[cactus].show();
+  };
   for (road in roads){
     roads[road].show();
   };
   for (player in players){
+    if (players[player].x - cars[0].h*4 < 0){
+      mapOffsetX += playerSpeed;
+    } else if (players[player].x + cars[0].h*4 > canvas.width){
+      mapOffsetX -= playerSpeed;
+    } else {
+      mapOffsetX = 0;
+    };
+    if (players[player].y - cars[0].h*2 < 0){
+      if (players[player].inCar){
+        mapOffsetY -= cars[players[player].carIndex].velocity * cosDegree(cars[players[player].carIndex].angle);
+      } else {
+        mapOffsetY += playerSpeed;
+      };
+    } else if (players[player].y + cars[0].h*2 > canvas.height){
+      if (players[player].inCar){
+        mapOffsetY -= cars[players[player].carIndex].velocity * cosDegree(cars[players[player].carIndex].angle);
+      } else {
+        mapOffsetY -= playerSpeed;
+      };
+    } else {
+      mapOffsetY = 0;
+    };
+    if (players[player].inCar){
+      objective = "Drive. "
+      if (cars[players[player].carIndex].velocity < 0) {cars[players[player].carIndex].velocity += carFriction};
+      if (cars[players[player].carIndex].velocity < maxCarSpeed){
+        cars[players[player].carIndex].velocity = maxCarSpeed
+      };
+      if (cars[players[player].carIndex].velocity > 0){
+        cars[players[player].carIndex].velocity = 0;
+      };
+      cars[players[player].carIndex].y += cars[players[player].carIndex].velocity * cosDegree(cars[players[player].carIndex].angle);
+      cars[players[player].carIndex].x -= cars[players[player].carIndex].velocity * sinDegree(cars[players[player].carIndex].angle);
+    } else {
+      objective = "get in the car.";
+    };
     for (car in cars){
-      let carPlayer = rectCircleCollision({x: players[player].x, y: players[player].y, r: 15}, {x: cars[car].x, y: cars[car].y, w: 80, h: 130});
+      let carPlayer = rectCircleCollision({x: players[player].x, y: players[player].y, r: 15}, {x: cars[car].x, y: cars[car].y, w: cars[car].w, h: cars[car].h});
+      let carPlayer1 = rectCircleCollision({x: players[player].x, y: players[player].y, r: 15}, {x: cars[car].x-5, y: cars[car].y-5, w: cars[car].w+10, h: cars[car].h+10});
       if (carPlayer && !players[player].inCar){
-        if (players[player].x < cars[car].x){
-          players[player].x -= playerSpeed;
+        message = 'Press Space to enter the car';
+        if (cars[car].angle !== 90){
+          if (players[player].x < cars[car].x){
+            players[player].x -= playerSpeed;
+          };
+          if (players[player].x > cars[car].x+cars[car].w){
+            players[player].x += playerSpeed;
+          };
+          if (players[player].y < cars[car].y){
+            players[player].y -= playerSpeed;
+          };
+          if (players[player].y > cars[car].y+cars[car].h){
+            players[player].y += playerSpeed;
+          };
         };
-        if (players[player].x > cars[car].x+80){
-          players[player].x += playerSpeed;
+      } else if (players[player].inCar){
+        if (message == 'Press Space to enter the car'){
+          message = '';
         };
-        if (players[player].y < cars[car].y){
-          players[player].y -= playerSpeed;
-        };
-        if (players[player].y > cars[car].y+130){
-          players[player].y += playerSpeed;
-        };
+        players[player].x = cars[car].x + cars[car].w/2;
+        players[player].y = cars[car].y + cars[car].h/2;
+      } else if (!carPlayer && !carPlayer1){
+        message = '';
       };
     };
     players[player].show();
@@ -136,42 +315,77 @@ function loop(){
   };
   ctx.fillStyle = "black";
   ctx.textAlign = "center";
-  ctx.font = "50px Ariel"
+  ctx.font = "50px Ariel";
   ctx.fillText("Objective: " + objective, canvas.width/2, 100);
+  ctx.font = "25px Ariel";
+  ctx.fillText(message, canvas.width/2, 150);
   ctx.textAlign = "start";
-  if (!paused){
-    requestAnimationFrame(loop);
+  ctx.drawImage(settingsImage, 10, 10, 40, 40);
+  // Settings screen
+  if (settings){
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "black";
+    ctx.fillRect(canvas.width*0.2, canvas.height*0.1, canvas.width*0.6, canvas.height*0.8);
+    ctx.fillStyle = "white";
+    ctx.globalAlpha = 1;
   };
+  requestAnimationFrame(loop);
 };
 
-window.addEventListener('DOMContentLoaded', loop, false);
+settingsImage.onload = () => {
+  loop();
+};
 
-document.addEventListener("keydown", event => {
-  if (event.code === 'KeyW'){
-    players[0].yVel = -playerSpeed;
-  };
-  if (event.code === 'KeyA'){
-    players[0].xVel = -playerSpeed;
-  };
-  if (event.code === 'KeyS'){
-    players[0].yVel = playerSpeed;
-  };
-  if (event.code === 'KeyD'){
-    players[0].xVel = playerSpeed;
+document.addEventListener("mouseup", event => {
+  let cursor = cursorRect(10, 10, 40, 40, event.clientX, event.clientY);
+  if (cursor){
+    settings = !settings;
   };
 });
+
+document.addEventListener("keydown", event => {
+  controls[event.code] = true;
+});
 document.addEventListener("keyup", event => {
+  controls[event.code] = false;
   if (event.code === 'KeyW'){
-    players[0].yVel = 0;
+    if (!players[0].inCar){
+      players[0].yVel = 0;
+    };
   };
   if (event.code === 'KeyA'){
-    players[0].xVel = 0;
+    if (!players[0].inCar){
+      players[0].xVel = 0;
+    };
   };
   if (event.code === 'KeyS'){
-    players[0].yVel = 0;
+    if (!players[0].inCar){
+      players[0].yVel = 0;
+    };
   };
   if (event.code === 'KeyD'){
-    players[0].xVel = 0;
+    if (!players[0].inCar){
+      players[0].xVel = 0;
+    };
+  };
+  if (event.code === 'Space'){
+    if (players[0].inCar){
+      if (cars[players[0].carIndex].velocity == 0){
+        players[0].inCar = false;
+        players[0].x = cars[players[0].carIndex].x-15;
+        players[0].y = cars[players[0].carIndex].y+30;
+      } else {
+        message = "Stop car to exit. ";
+      };
+    } else {
+      for (car in cars){
+        let carPlayer = rectCircleCollision({x: players[player].x, y: players[player].y, r: 15}, {x: cars[car].x-5, y: cars[car].y-5, w: cars[car].w+10, h: cars[car].h+10});
+        if (carPlayer){
+          players[0].inCar = true;
+          players[0].carIndex = car;
+        };
+      };
+    };
   };
 });
   </script>
