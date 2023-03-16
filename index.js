@@ -96,6 +96,8 @@ app.get("/road-trip", function(req, res) {
   res.render("roadtrip", { page: 'game' });
 });
 
+let currentPlayers = [];
+
 app.get("/game", function(req, res) {
   res.redirect("/");
 });
@@ -110,10 +112,23 @@ app.post("/game", function(req, res) {
     req.body.name4 = 'Player 4'
   }
   let names = [req.body.name, req.body.name2, req.body.name3, req.body.name4];
-  let duplicates = [];
   for (i in names) {
     if (names[i] === names[i - 1]) {
       names[i] = names[i] + i;
+    };
+    if (names[i] === names[i - 2]) {
+      names[i] = names[i] + (i * 2);
+    };
+    if (names[i] !== undefined && names[i].length > 10) {
+      names[i] = names[i].slice(0, 10) + "...";
+    };
+  };
+  if (req.body.mode === 'online') {
+    if (currentPlayers.indexOf(names[0]) !== -1) {
+      currentPlayers.splice(currentPlayers.indexOf(names[0]), 1);
+      res.redirect("/")
+    } else {
+      currentPlayers.push(names[0]);
     };
   };
   let color = randomColor();
