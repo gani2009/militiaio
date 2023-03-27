@@ -129,14 +129,21 @@ app.post("/game", function(req, res) {
       res.redirect("/")
     } else {
       currentPlayers.push(names[0]);
+      let color = randomColor();
+      let color2 = randomColor();
+      let color3 = randomColor();
+      let color4 = randomColor();
+      let ais = req.body.ai;
+      res.render("game", { page: 'game', name: names[0], color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: names[1], player3Name: names[2], player4Name: names[3], ais: ais });
     };
+  } else {
+    let color = randomColor();
+    let color2 = randomColor();
+    let color3 = randomColor();
+    let color4 = randomColor();
+    let ais = req.body.ai;
+    res.render("game", { page: 'game', name: names[0], color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: names[1], player3Name: names[2], player4Name: names[3], ais: ais });
   };
-  let color = randomColor();
-  let color2 = randomColor();
-  let color3 = randomColor();
-  let color4 = randomColor();
-  let ais = req.body.ai;
-  res.render("game", { page: 'game', name: names[0], color: color, color2: color2, color3: color3, color4: color4, mode: req.body.mode, player2Name: names[1], player3Name: names[2], player4Name: names[3], ais: ais });
 });
 
 app.ws('/chat', function(ws, req) {
